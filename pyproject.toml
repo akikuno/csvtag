@@ -1,0 +1,24 @@
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry]
+name = "csvtag"
+version = "0.0.1"
+description = "Annotate inversion for minimap2's cs tags"
+authors = ["Akihiro Kuno <akuno@md.tsukuba.ac.jp>"]
+homepage = "https://github.com/akikuno/csvtag"
+repository = "https://github.com/akikuno/csvtag"
+readme = "README.md"
+license = "MIT"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+cstag = ">=1.0.0"
