@@ -2,11 +2,11 @@
 
 # csv tag
 
-csvtag is a toolkit for csv tag, a format of cs tag that supports inversion.
+csvtag is a toolkit for `csv` tag, a format of cs tag that supports inversion.
 
-# Operators
+# Specification of `csv` tag
 
-This is essentially the same encoding as the [minimap2 cs tag](https://lh3.github.io/minimap2/minimap2.html#10), but with the one difference that **lowercase letters represent Inversions**:
+This is essentially the same encoding as the [minimap2 cs tag](https://lh3.github.io/minimap2/minimap2.html#10), but with the one difference that **lowercase letters represent inversions**:
 
 | Prefix  | Sequence          | Description                  |
 | --- | -------------- | ---------------------------- |
@@ -29,13 +29,12 @@ This is essentially the same encoding as the [minimap2 cs tag](https://lh3.githu
   - 同じQUALの場合には、参照ゲノムと合っている塩基を優先します
 
 
-# Features
+# Functions
 
 - `csvtag.call()`: Generate a csv tag
 - `csvtag.to_vcf()`: Generate an VCF representation
 - `csvtag.to_html()`: Generate an HTML representation
 - `csvtag.to_pdf()`: Produce an PDF file
-
 
 
 # Usage
