@@ -21,4 +21,4 @@ classifiers = [
 
 [tool.poetry.dependencies]
 python = "^3.8"
-cstag = ">=1.0.0"
+cstag = ">=1.1.0"
