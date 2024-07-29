@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from csvtag.revcomp import revcomp
-from csvtag.spliter import split_by_inversion, split_by_tag
+from csvtag.splitter import split_by_inversion, split_by_tag
 
 
 def to_sequence(csv_tag: str) -> str:
