@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import re
-from typing import Generator
+from collections.abc import Generator
 
 
-def split_by_tag(csv_tag: str) -> Generator[str]:
+def split_by_tag(csv_tag: str) -> Generator[str, None, None]:
     """Split a csv tag
     Args:
         csv_tag (str): a csv tag
@@ -14,7 +14,7 @@ def split_by_tag(csv_tag: str) -> Generator[str]:
     Example:
         >>> import csvtag
         >>> csv_tag = ":4*AG:3"
-        >>> csvtag.split(csv_tag)
+        >>> csvtag.split_by_tag(csv_tag)
         [':4', '*AG', ':3']
     """
     pattern = (
@@ -52,3 +52,23 @@ def split_by_inversion(csv_tag: str) -> Generator[str]:
             is_inversion = False
         else:
             yield csv
+
+
+def split_by_nucleotide(csv_tag: str) -> Generator[str]:
+    """Split a csv tag
+    Args:
+        csv_tag (str): a csv tag
+    Return:
+        list[str]: splits a csv tag by nucleotide
+
+    Example:
+        >>> import csvtag
+        >>> csv_tag = "=AA=ac*tc:=TT"
+        >>> csvtag.split_by_nucleotide(csv_tag)
+        ['=A', '=A', '=a', '*AG', ':3']
+    """
+    pattern = (
+        r"(\=[ACGTN]+|:[0-9]+|\*[ACGTN][ACGTN]|\+[ACGTN]+|\-[ACGTN]+|\~[ACGTN]{2}[0-9]+[ACGTN]{2}|[=*+-~][acgtn]+)"
+    )
+
+    return (csv for csv in re.split(pattern, csv_tag) if csv)
