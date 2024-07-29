@@ -2,9 +2,8 @@ from __future__ import annotations
 
 import re
 
-from cstag.split import split
-from cstag.utils.validator import validate_csv_tag, validate_long_format
-from cstag.template.html import HTML_FOOTER, HTML_HEADER, HTML_LEGEND
+from csvtag.splitter import split_by_tag
+from csvtag.template.html import HTML_FOOTER, HTML_HEADER, HTML_LEGEND
 
 
 def append_mark_to_n(csv_tag: str) -> str:
@@ -31,7 +30,7 @@ def process_csv_tag(csv_tag: str) -> str:
     # Format csv_tag
     csv_tag = csv_tag.replace("cs:Z:", "")
     csv_tag_marked = append_mark_to_n(csv_tag)
-    csv_tag_split = split(csv_tag_marked)
+    csv_tag_split = split_by_tag(csv_tag_marked)
 
     # Build html
     html_body = []
@@ -74,8 +73,7 @@ def to_html(csv_tag: str, description: str = "") -> str:
         >>> description = "Example"
         >>> html_string = cstag.to_html(csv_tag, description)
     """
-    validate_csv_tag(csv_tag)
-    validate_long_format(csv_tag)
+
     description_str = f"<h1>{description}</h1>" if description else ""
     html_body = process_csv_tag(csv_tag)
     report = "\n".join(

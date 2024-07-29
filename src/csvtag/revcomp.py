@@ -57,6 +57,5 @@ def revcomp(csv_tag: str) -> str:
         else:
             cs_revcomp = "".join([map_revcomp[c] for c in csv[1:]])[::-1]
             csv_tag_revcomp.append(f"{operand}{cs_revcomp}")
-    csv_tag_revcomp = "".join(csv_tag_revcomp)
 
-    return csv_tag_revcomp
+    return "".join(csv_tag_revcomp)

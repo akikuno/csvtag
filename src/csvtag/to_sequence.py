@@ -21,14 +21,14 @@ def to_sequence(csv_tag: str) -> str:
     """
     sequence = []
 
-    csv_tag_inversion_corrected = []
+    csv_tag_inversion = []
     for csv in split_by_inversion(csv_tag):
         nucleotide = csv[-1]
         if nucleotide.islower():
-            csv_tag_inversion_corrected.append(revcomp(csv))
+            csv_tag_inversion.append(revcomp(csv))
         else:
-            csv_tag_inversion_corrected.append(csv)
-    csv_tag_inversion_corrected = "".join(csv_tag_inversion_corrected)
+            csv_tag_inversion.append(csv)
+    csv_tag_inversion_corrected: str = "".join(csv_tag_inversion)
 
     for cs in split_by_tag(csv_tag_inversion_corrected):
         if cs.startswith("="):
