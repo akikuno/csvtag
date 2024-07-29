@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import re
-from collections.abc import Generator
+from collections.abc import Iterator
 
 
-def split_by_tag(csv_tag: str) -> Generator[str, None, None]:
+def split_by_tag(csv_tag: str) -> Iterator[str]:
     """Split a csv tag
     Args:
         csv_tag (str): a csv tag
@@ -24,7 +24,7 @@ def split_by_tag(csv_tag: str) -> Generator[str, None, None]:
     return (csv for csv in re.split(pattern, csv_tag) if csv)
 
 
-def split_by_inversion(csv_tag: str) -> Generator[str, None, None]:
+def split_by_inversion(csv_tag: str) -> Iterator[str]:
     """Split a csv tag by inversion
     Args:
         csv_tag (str): a csv tag
@@ -59,34 +59,41 @@ def split_by_inversion(csv_tag: str) -> Generator[str, None, None]:
 ###########################################################
 
 
-def _handle_insertion(csv_tag: str, csv_tag_next: str) -> list[str]:
+def handle_insertion(csv_tag: str, csv_tag_next: str) -> list[str]:
     """Handles insertion operations.
     csv_tag = "+acgt"
     csv_tag_next = "=AAA"
-    results = _handle_insertion(csv_tag, csv_tag_next)
+    results = handle_insertion(csv_tag, csv_tag_next)
     expected = ["+a|+c|+g|+t|=A", "=A", "=A"]
     """
-    insertion: str = "|".join(_handle_match_deletion(csv_tag, "+"))
+    insertion: str = "|".join(handle_match_deletion(csv_tag, "+"))
 
     operand_next = csv_tag_next[0]
-    if operand_next in {"*", "=", "-"}:
-        csv_tag_split = iter(_handle_match_deletion(csv_tag_next, operand_next))
+    if operand_next in {"=", "-"}:
+        csv_tag_split = iter(handle_match_deletion(csv_tag_next, operand_next))
         return [insertion + "|" + next(csv_tag_split), *list(csv_tag_split)]
+    elif operand_next == "*":
+        return [insertion + "|" + csv_tag_next]
+    else:
+        n_bases = handle_splice(csv_tag_next)
+        return [insertion + "|" + "=N"] + n_bases[1:]
 
 
-def _handle_splice(csv_tag: str) -> list[str]:
+def handle_splice(csv_tag: str) -> list[str]:
     """Handles splice operations."""
-    match = re.match(r"([A-Za-z]+)([0-9]+)([A-Za-z]+)", csv_tag.replace("~", ""))
+    match = re.match(r"([A-Za-z][A-Za-z])([0-9]+)([A-Za-z][A-Za-z])", csv_tag.replace("~", ""))
+    if match is None:
+        return []
     _, splice, _ = match.groups()
     return ["=N"] * int(splice)
 
 
-def _handle_match_deletion(csv_tag: str, operand: str) -> list[str]:
+def handle_match_deletion(csv_tag: str, operand: str) -> list[str]:
     """Handles substitution or deletion operations."""
     return [operand + c for c in csv_tag.replace(operand, "")]
 
 
-def split_by_nucleotide(csv_tag: str) -> Generator[str, None, None]:
+def split_by_nucleotide(csv_tag: str) -> Iterator[str]:
     """Generate CS SPLIT, a comma-separated nucleotide sequence
 
     Args:
@@ -112,9 +119,9 @@ def split_by_nucleotide(csv_tag: str) -> Generator[str, None, None]:
         if operand == "*":
             csv_tags.append(csv_tag)
         elif operand == "+":
-            csv_tags += _handle_insertion(csv_tag, next(csv_tag_splitted))
+            csv_tags += handle_insertion(csv_tag, next(csv_tag_splitted))
         elif operand == "~":
-            csv_tags += _handle_splice(csv_tag)
+            csv_tags += handle_splice(csv_tag)
         else:
-            csv_tags += _handle_match_deletion(csv_tag, operand)
+            csv_tags += handle_match_deletion(csv_tag, operand)
     yield from csv_tags
