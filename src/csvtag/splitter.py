@@ -35,7 +35,7 @@ def split_by_inversion(csv_tag: str) -> Iterator[str]:
         >>> import csvtag
         >>> csv_tag = "=AA=aa*ga=a=AA"
         >>> csvtag.split_by_inversion(csv_tag)
-        ['=AA', '=aa', '*ga', '=a', '=AA']
+        ["=AA", "=aa*ga=a", "=TT"]
     """
     csv_tag_inversion = []
     is_inversion = False

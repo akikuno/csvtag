@@ -9,6 +9,9 @@ import cstag
 from csvtag.microhomology_handler import remove_microhomology
 from csvtag.sam_handler import extract_alignment, is_forward_strand, read_sam, remove_overlapped_alignments
 
+############################
+# On-Going!!!
+############################
 
 def convert_to_csvtag(alignments: list[dict[str, str | int]]) -> str:
     idx_inversion = set()
@@ -17,6 +20,13 @@ def convert_to_csvtag(alignments: list[dict[str, str | int]]) -> str:
         curr_align = alignments[idx]
         next_align = alignments[idx + 1]
 
+        curr_pos: int = curr_align["POS"]
+        next_pos: int = next_align["POS"]
+        
+        if curr_pos == next_pos:
+            idx += 1
+            continue
+        
         curr_flag: int = curr_align["FLAG"]
         next_flag: int = next_align["FLAG"]
         curr_cstag: str = curr_align["CSTAG"]
@@ -43,7 +53,7 @@ def convert_to_csvtag(alignments: list[dict[str, str | int]]) -> str:
     return "".join(align["CSTAG"] for align in alignments)
 
 
-def call_csvtag(path_sam: str | Path) -> Iterator[dict[str, str]]:
+def call_csvtag(path_sam: str | Path) -> Iterator[dict[str, list[str]]]:
     alignments: Iterator[dict[str, str | int]] = extract_alignment(read_sam(path_sam))
     alignments = remove_overlapped_alignments(alignments)
     alignments = remove_microhomology(alignments)
@@ -52,9 +62,8 @@ def call_csvtag(path_sam: str | Path) -> Iterator[dict[str, str]]:
     alignments.sort(key=lambda x: (x["QNAME"], x["POS"]))
     for qname, alignments_grouped in groupby(alignments, key=lambda x: x["QNAME"]):
         alignments_grouped = list(alignments_grouped)
-        if len(alignments_grouped) == 1:
-            for alignment in alignments_grouped:
-                yield {qname: alignment["CSTAG"]}
+        if len(alignments_grouped) <= 2:
+            yield {qname: [a["CSTAG"].upper() for a in alignments_grouped]}
             continue
         csv_tag = convert_to_csvtag(alignments_grouped)
-        yield {qname: csv_tag}
+        yield {qname: [csv_tag]}
