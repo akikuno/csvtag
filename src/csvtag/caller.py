@@ -11,8 +11,9 @@ from csvtag.sam_handler import extract_alignment, is_forward_strand, read_sam, r
 
 
 def convert_to_csvtag(alignments: list[dict[str, str | int]]) -> str:
+    idx_inversion = set()
     idx = 0
-    while idx < len(alignments) - 1:
+    while idx + 1 < len(alignments):
         curr_align = alignments[idx]
         next_align = alignments[idx + 1]
 
@@ -25,11 +26,18 @@ def convert_to_csvtag(alignments: list[dict[str, str | int]]) -> str:
             if is_forward_strand(curr_flag):
                 curr_align["CSTAG"] = curr_cstag.upper()
                 next_align["CSTAG"] = cstag.revcomp(next_cstag).lower()
+                idx_inversion.add(idx + 1)
             else:
                 curr_align["CSTAG"] = cstag.revcomp(curr_cstag).lower()
                 next_align["CSTAG"] = next_cstag.upper()
-
+                idx_inversion.add(idx)
             next_align["FLAG"] -= 16
+        else:
+            if idx not in idx_inversion:
+                curr_align["CSTAG"] = curr_cstag.upper()
+            if idx + 1 not in idx_inversion:
+                next_align["CSTAG"] = next_cstag.upper()
+
         idx += 1
 
     return "".join(align["CSTAG"] for align in alignments)
