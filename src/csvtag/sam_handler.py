@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 from collections.abc import Iterator
+from dataclasses import dataclass
 from itertools import groupby
 from pathlib import Path
 
@@ -12,6 +13,27 @@ def read_sam(path_of_sam: str | Path) -> Iterator[list[str]]:
     with open(path_of_sam) as f:
         for line in f:
             yield line.strip().split("\t")
+
+
+def is_forward_strand(flag: int) -> bool:
+    """Determine if the read is mapped to the forward strand based on the FLAG.
+
+    Args:
+        flag (int): SAM FLAG field.
+
+    Returns:
+        bool: True if the read is mapped to the forward strand, False otherwise.
+    """
+    return (flag & 0x10) == 0
+
+
+def _split_cigar(cigar: str) -> Iterator[str]:
+    cigar_iter = iter(re.split(r"([MIDNSHPX=])", cigar))
+    return (i + op for i, op in zip(cigar_iter, cigar_iter))
+
+
+def calculate_alignment_length(cigar: str) -> int:
+    return sum(int(c[:-1]) for c in _split_cigar(cigar) if c[-1] in "MDN=X")
 
 
 ###########################################################
@@ -60,30 +82,36 @@ def extract_alignment(sam: list[list[str]]) -> Iterator[dict[str, str | int]]:
             CIGAR=alignment[5],
             SEQ=alignment[9],
             QUAL=alignment[10],
-            CSTAG=alignment[idx_cstag].replace("cs:Z", ""),
+            CSTAG=alignment[idx_cstag].replace("cs:Z:", ""),
         )
 
 
 ###########################################################
-# Remove Softclips from SEQ and QUAL
+# Remove Overlapped alignments
 ###########################################################
 
 
-def _split_cigar(cigar: str) -> Iterator[str]:
-    cigar_iter = iter(re.split(r"([MIDNSHPX=])", cigar))
-    return (i + op for i, op in zip(cigar_iter, cigar_iter))
+@dataclass
+class OverlappedAlignment:
+    prev_cigar: str
+    curr_cigar: str
+    prev_cstag: str
+    curr_cstag: str
+    prev_pos: int
+    curr_pos: int
 
 
-def _calculate_alignment_length(cigar: str) -> int:
-    return sum(int(c[:-1]) for c in _split_cigar(cigar) if c[-1] in "MDN=X")
-
-
-def _is_complete_overlapped(prev_cigar: str, prev_pos: int, curr_cigar: str, curr_pos: int) -> bool:
+def _is_complete_overlapped(alignments_overlapped: OverlappedAlignment) -> bool:
     """Detect the shorter reads that are completely included in the longer reads"""
+    prev_pos = alignments_overlapped.prev_pos
+    curr_pos = alignments_overlapped.curr_pos
+    prev_cigar = alignments_overlapped.prev_cigar
+    curr_cigar = alignments_overlapped.curr_cigar
+
     prev_start = prev_pos - 1
-    prev_end = prev_start + _calculate_alignment_length(prev_cigar)
+    prev_end = prev_start + calculate_alignment_length(prev_cigar)
     curr_start = curr_pos - 1
-    curr_end = curr_start + _calculate_alignment_length(curr_cigar)
+    curr_end = curr_start + calculate_alignment_length(curr_cigar)
 
     if prev_start <= curr_start and prev_end >= curr_end:
         return True
@@ -91,18 +119,26 @@ def _is_complete_overlapped(prev_cigar: str, prev_pos: int, curr_cigar: str, cur
     return False
 
 
-def _is_non_microhomologic_overlapped(
-    prev_cstag: str, curr_cstag, prev_cigar: str, prev_pos: int, curr_cigar: str, curr_pos: int
-) -> bool:
+def _is_non_microhomologic_overlapped(alignments_overlapped: OverlappedAlignment) -> bool:
+    prev_pos = alignments_overlapped.prev_pos
+    curr_pos = alignments_overlapped.curr_pos
+    prev_cigar = alignments_overlapped.prev_cigar
+    curr_cigar = alignments_overlapped.curr_cigar
+    prev_cstag = alignments_overlapped.prev_cstag
+    curr_cstag = alignments_overlapped.curr_cstag
+
     prev_seq = cstag.to_sequence(prev_cstag)
     curr_seq = cstag.to_sequence(curr_cstag)
 
     prev_start = prev_pos - 1
-    prev_end = prev_start + _calculate_alignment_length(prev_cigar)
+    prev_end = prev_start + calculate_alignment_length(prev_cigar)
     curr_start = curr_pos - 1
-    curr_end = curr_start + _calculate_alignment_length(curr_cigar)
+    curr_end = curr_start + calculate_alignment_length(curr_cigar)
 
     overlap_length = min(prev_end, curr_end) - max(prev_start, curr_start)
+
+    if overlap_length <= 0:
+        return False
 
     for prev_base, curr_base in zip(prev_seq[::-1][:overlap_length], curr_seq[:overlap_length]):
         if prev_base != curr_base:
@@ -111,10 +147,8 @@ def _is_non_microhomologic_overlapped(
     return False
 
 
-def _is_overlapped(prev_cstag: str, curr_cstag, prev_cigar: str, prev_pos: int, curr_cigar: str, curr_pos: int) -> bool:
-    return _is_complete_overlapped(prev_cigar, prev_pos, curr_cigar, curr_pos) or _is_non_microhomologic_overlapped(
-        prev_cstag, curr_cstag, prev_cigar, prev_pos, curr_cigar, curr_pos
-    )
+def _is_overlapped(alignments_overlapped: OverlappedAlignment) -> bool:
+    return _is_complete_overlapped(alignments_overlapped) or _is_non_microhomologic_overlapped(alignments_overlapped)
 
 
 def _remove_duplicates(list_of_dicts: list[dict[str, str | int]]) -> list[dict[str, str | int]]:
@@ -158,15 +192,19 @@ def remove_overlapped_alignments(alignments: Iterator[dict[str, str | int]]) -> 
             continue
 
         for i, (previous_alignment, current_alignment) in enumerate(zip(alignments, alignments[1:])):
-            prev_cstag = previous_alignment["CSTAG"]
-            curr_cstag = current_alignment["CSTAG"]
-            prev_cigar = previous_alignment["CIGAR"]
-            curr_cigar = current_alignment["CIGAR"]
-            prev_pos = previous_alignment["POS"]
-            curr_pos = current_alignment["POS"]
+            alignments_overlapped = OverlappedAlignment(
+                prev_cigar=previous_alignment["CIGAR"],
+                curr_cigar=current_alignment["CIGAR"],
+                prev_cstag=previous_alignment["CSTAG"],
+                curr_cstag=current_alignment["CSTAG"],
+                prev_pos=previous_alignment["POS"],
+                curr_pos=current_alignment["POS"],
+            )
 
-            if _is_overlapped(prev_cstag, curr_cstag, prev_cigar, prev_pos, curr_cigar, curr_pos):
-                if _calculate_alignment_length(prev_cigar) >= _calculate_alignment_length(curr_cigar):
+            if _is_overlapped(alignments_overlapped):
+                prev_length = calculate_alignment_length(alignments_overlapped.prev_cigar)
+                curr_length = calculate_alignment_length(alignments_overlapped.curr_cigar)
+                if prev_length >= curr_length:
                     alignments[i + 1] = previous_alignment
                 else:
                     alignments[i] = current_alignment

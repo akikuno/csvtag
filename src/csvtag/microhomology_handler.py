@@ -27,8 +27,9 @@ def _check_microhomology(curr_sequence: str, next_sequence: str) -> int:
 
 def _trim_microhomology(alignments: list[dict[str, str | int]]) -> list[dict[str, str | int]]:
     """
-    alignments = [{"CSTAG": "=AAATTT"}, {"CSTAG": "=TTTCCC"}]
-    -> [{"CSTAG": "=AAATTT"}, {"CSTAG": "=CCC"}]
+    alignments = [{"QNAME": read1, "CSTAG": "=AAATTT"}, {"QNAME": read1, "CSTAG": "=TTTCCC"}]
+    _trim_microhomology(alignments)
+    [{"CSTAG": "=AAATTT"}, {"CSTAG": "=CCC"}]
     """
     idx = 0
     while idx < len(alignments) - 1:
@@ -59,13 +60,13 @@ def _trim_microhomology(alignments: list[dict[str, str | int]]) -> list[dict[str
     return alignments
 
 
-def remove_microhomology(alignments_all: Iterator[dict[str, str | int]]) -> Iterator[dict[str, str | int]]:
-    alignments_all = list(alignments_all)
-    alignments_all.sort(key=lambda x: (x["QNAME"], x["POS"]))
+def remove_microhomology(alignments: Iterator[dict[str, str | int]]) -> Iterator[dict[str, str | int]]:
+    alignments = list(alignments)
+    alignments.sort(key=lambda x: (x["QNAME"], x["POS"]))
 
-    for _, alignments in groupby(alignments_all, key=lambda x: x["QNAME"]):
-        alignments = list(alignments)
-        if len(alignments) == 1:
-            yield from alignments
+    for _, alignments_grouped in groupby(alignments, key=lambda x: x["QNAME"]):
+        alignments_grouped = list(alignments_grouped)
+        if len(alignments_grouped) == 1:
+            yield from alignments_grouped
             continue
-        yield from _trim_microhomology(alignments)
+        yield from _trim_microhomology(alignments_grouped)

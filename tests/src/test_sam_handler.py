@@ -1,14 +1,32 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
+
 import pytest
 
 from csvtag.sam_handler import (
-    _calculate_alignment_length,
     _is_complete_overlapped,
+    _is_non_microhomologic_overlapped,
+    calculate_alignment_length,
     extract_alignment,
     extract_sqheaders,
+    is_forward_strand,
     remove_overlapped_alignments,
 )
+
+
+def test_is_forward_strand():
+    test_cases = [
+        (0, True),  # Forward strand
+        (16, False),  # Reverse strand
+        (99, True),  # Forward strand
+        (83, False),  # Reverse strand
+        (147, False),  # Reverse strand
+        (163, True),  # Forward strand
+    ]
+
+    for flag, expected in test_cases:
+        assert is_forward_strand(flag) == expected, f"Failed for flag: {flag}"
 
 
 def test_extract_sqheaders_simple():
@@ -28,7 +46,7 @@ def test_extract_sqheaders_multiple():
 def test_extract_alignment():
     sam = [
         ["@SQ", "SN:1", "LN:100"],
-        ["r001", "99", "chr1", "7", "255", "30M", "*", "0", "0", "AGCTTAGCTAGCTACCTATATCTTGGTCTTGGCCG", "*", "cs:Z:0"],
+        ["r001", "99", "chr1", "7", "255", "30M", "*", "0", "0", "AGCTTAGCTAGCTACCTATATCTTGGTCTTGGCCG", "*", "cs:Z::0"],
         ["r002", "0", "*", "0", "0", "*", "*", "0", "0", "*", "*", "cs:Z:1"],
     ]
 
@@ -60,25 +78,97 @@ def test_extract_alignment():
         ("5M5S5M", 10),
     ],
 )
-def test_calculate_alignment_length(cigar, expected):
-    result = _calculate_alignment_length(cigar)
+def testcalculate_alignment_length(cigar, expected):
+    result = calculate_alignment_length(cigar)
+    assert result == expected, f"Expected {expected}, but got {result}"
+
+
+#########################################
+# _is_overlapped
+#########################################
+
+
+@dataclass
+class OverlappedAlignment:
+    prev_cigar: str
+    curr_cigar: str
+    prev_cstag: str = ""
+    curr_cstag: str = ""
+    prev_pos: int = 0
+    curr_pos: int = 0
+
+
+@pytest.mark.parametrize(
+    "alignments_overlapped, expected",
+    [
+        (OverlappedAlignment("10M", "5M", prev_pos=1, curr_pos=1), True),
+        (OverlappedAlignment("10M", "5M", prev_pos=1, curr_pos=6), True),
+        (OverlappedAlignment("10M", "5M", prev_pos=1, curr_pos=7), False),
+        (OverlappedAlignment("5M", "10M", prev_pos=1, curr_pos=1), False),
+        (OverlappedAlignment("10M", "10M", prev_pos=1, curr_pos=1), True),
+        (OverlappedAlignment("10M5I10M", "5M", prev_pos=1, curr_pos=11), True),
+        (OverlappedAlignment("10M5I10M", "15M", prev_pos=1, curr_pos=11), False),
+    ],
+)
+def test_is_complete_overlapped(alignments_overlapped, expected):
+    result = _is_complete_overlapped(alignments_overlapped)
     assert result == expected, f"Expected {expected}, but got {result}"
 
 
 @pytest.mark.parametrize(
-    "prev_cigar, prev_pos, curr_cigar, curr_pos, expected",
+    "alignments_overlapped, expected",
     [
-        ("10M", 1, "5M", 1, True),
-        ("10M", 1, "5M", 6, True),
-        ("10M", 1, "5M", 7, False),
-        ("5M", 1, "10M", 1, False),
-        ("10M", 1, "10M", 1, True),
-        ("10M5I10M", 1, "5M", 11, True),
-        ("10M5I10M", 1, "15M", 11, False),
+        pytest.param(
+            OverlappedAlignment(
+                prev_cstag="=ACTG", curr_cstag="=ACT", prev_cigar="4M", curr_cigar="3M", prev_pos=1, curr_pos=1
+            ),
+            True,
+            id="test_case_1",
+        ),
+        pytest.param(
+            OverlappedAlignment(
+                prev_cstag="=ACTG", curr_cstag="=ACT", prev_cigar="4M", curr_cigar="3M", prev_pos=1, curr_pos=6
+            ),
+            False,
+            id="test_case_2",
+        ),
+        pytest.param(
+            OverlappedAlignment(
+                prev_cstag="=ACTG", curr_cstag="=ACT", prev_cigar="4M", curr_cigar="3M", prev_pos=1, curr_pos=7
+            ),
+            False,
+            id="test_case_3",
+        ),
+        pytest.param(
+            OverlappedAlignment(
+                prev_cstag="=ACT", curr_cstag="=ACTG", prev_cigar="3M", curr_cigar="4M", prev_pos=1, curr_pos=1
+            ),
+            True,
+            id="test_case_4",
+        ),
+        pytest.param(
+            OverlappedAlignment(
+                prev_cstag="=ACTG", curr_cstag="=ACTG", prev_cigar="4M", curr_cigar="4M", prev_pos=1, curr_pos=1
+            ),
+            True,
+            id="test_case_5",
+        ),
+        pytest.param(
+            OverlappedAlignment(
+                prev_cstag="=ACTGACTGACTG",
+                curr_cstag="=ACTGACTGACTG",
+                prev_cigar="12M",
+                curr_cigar="12M",
+                prev_pos=1,
+                curr_pos=11,
+            ),
+            True,
+            id="test_case_6",
+        ),
     ],
 )
-def test_is_complete_overlapped(prev_cigar, prev_pos, curr_cigar, curr_pos, expected):
-    result = _is_complete_overlapped(prev_cigar, prev_pos, curr_cigar, curr_pos)
+def test_is_non_microhomologic_overlapped(alignments_overlapped, expected):
+    result = _is_non_microhomologic_overlapped(alignments_overlapped)
     assert result == expected, f"Expected {expected}, but got {result}"
 
 
