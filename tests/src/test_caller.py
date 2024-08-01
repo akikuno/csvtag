@@ -56,11 +56,23 @@ def test_call_csvtag_one_alignment():
     assert result == expected, f"Expected {expected}, but got {result}"
 
 
-def test_call_csvtag_tow_alignment():
+def test_call_csvtag_two_alignments():
     path_sam = Path("tests/data/two_alignments.sam")
     result = list(call_csvtag(path_sam))
     expected = [
         {"QNAME": "read1", "CSVTAG": "=AAAAA"},
         {"QNAME": "read1", "CSVTAG": "=AA*AG=AA"},
+    ]
+    assert result == expected, f"Expected {expected}, but got {result}"
+
+
+# TODO: Add inversion tests
+
+
+def test_call_csvtag_three_alignments_with_inv():
+    path_sam = Path("tests/data/three_alignments_witn_inv.sam")
+    result = list(call_csvtag(path_sam))
+    expected = [
+        {"QNAME": "read1", "CSVTAG": "=AAAAANNNNN=aa*ag=aa=NNNNNGGGGG"},
     ]
     assert result == expected, f"Expected {expected}, but got {result}"

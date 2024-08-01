@@ -15,10 +15,6 @@ from csvtag.sam_handler import (
     remove_overlapped_alignments,
 )
 
-############################
-# On-Going!!!
-############################
-
 
 def _is_second_strand_different(first_flag: int, second_flag: int, third_flag: int) -> bool:
     if is_forward_strand(first_flag) == is_forward_strand(third_flag) and is_forward_strand(
@@ -49,26 +45,12 @@ def _padding_n(cs_tag: str, length: int, side: str = "left") -> str:
             return cs_tag + "=" + ("N" * length)
 
 
-def _make_unique(data: list[dict[str, str]]) -> list[dict[str, str]]:
-    # ユニークな辞書のリストを保持するためのリスト
-    unique_list = []
-    # 重複チェックのためのセット
-    seen = set()
-
-    # 各辞書を処理
-    for entry in data:
-        # 各キーと値のペアを処理
-        for key, value in entry.items():
-            # キーと値のタプルを作成
-            pair = (key, value)
-            # ペアがまだ見られていない場合
-            if pair not in seen:
-                # ユニークリストに追加
-                unique_list.append({key: value})
-                # セットにペアを追加
-                seen.add(pair)
-
-    return unique_list
+def _unique_dicts(list_of_dicts: list[dict[str, str]]) -> list[dict[str, str]]:
+    # 各辞書をタプルに変換してセットに格納する
+    unique_items = {tuple(d.items()) for d in list_of_dicts}
+    # セットから元の辞書形式に戻す
+    unique_dicts = [dict(t) for t in unique_items]
+    return unique_dicts
 
 
 def convert_to_csvtag(alignments: list[dict[str, str | int]]) -> list[dict[str, str | int]]:
@@ -136,7 +118,7 @@ def _upper_cstag(alignments: list[dict[str, str]]) -> list[dict[str, str]]:
 
 def call_csvtag(path_sam: str | Path) -> Iterator[dict[str, str]]:
     """
-    output: [{"QNAME": "read1", "CSVTAG": "=AAAAA", ...]}
+    output: [{"QNAME": "read1", "CSVTAG": "=AAAAA"], {"QNAME": "read1", "CSVTAG": "=TTTTT"}, ...]}
     """
     alignments: Iterator[dict[str, str | int]] = extract_alignment(read_sam(path_sam))
     alignments = remove_overlapped_alignments(alignments)
@@ -157,4 +139,4 @@ def call_csvtag(path_sam: str | Path) -> Iterator[dict[str, str]]:
 
         alignments_grouped = convert_to_csvtag(alignments_grouped)
 
-        yield from _make_unique([{"QNAME": qname, "CSVTAG": a["CSTAG"]} for a in alignments_grouped])
+        yield from _unique_dicts([{"QNAME": qname, "CSVTAG": a["CSTAG"]} for a in alignments_grouped])

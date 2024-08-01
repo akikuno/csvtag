@@ -6,6 +6,7 @@ from itertools import groupby
 import cstag
 
 from csvtag.combiner import combine_splitted_csv_tag as combine
+from csvtag.sam_handler import split_cigar
 from csvtag.splitter import split_by_nucleotide as split
 
 ###########################################################
@@ -13,15 +14,24 @@ from csvtag.splitter import split_by_nucleotide as split
 ###########################################################
 
 
-def _check_microhomology(curr_sequence: str, next_sequence: str) -> int:
+def _trim_softclip(qual: str, cigar: str) -> str:
+    cigar_split = list(split_cigar(cigar))
+    if cigar_split[0].endswith("S"):
+        softclip_length = int(cigar_split[0][:-1])
+        qual = qual[softclip_length:]
+    if cigar_split[-1].endswith("S"):
+        softclip_length = int(cigar_split[-1][:-1])
+        qual = qual[:-softclip_length]
+    return qual
+
+
+def _get_length_of_microhomology(curr_sequence: str, next_sequence: str, curr_qual: str, next_qual: str) -> int:
     len_microhomology = 0
     min_length = min(len(curr_sequence), len(next_sequence))
 
-    for i in range(1, min_length):
-        if curr_sequence[-i:] == next_sequence[:i]:
+    for i in range(1, min_length + 1):
+        if curr_sequence[-i:] == next_sequence[:i] and curr_qual[-i:] == next_qual[:i]:
             len_microhomology = i
-        else:
-            break
     return len_microhomology
 
 
@@ -37,8 +47,18 @@ def _trim_microhomology(alignments: list[dict[str, str | int]]) -> list[dict[str
         curr_cstag: str = curr_align["CSTAG"]
         next_cstag: str = next_align["CSTAG"]
 
+        curr_cigar: str = curr_align["CIGAR"]
+        next_cigar: str = next_align["CIGAR"]
+        curr_qual: str = curr_align["QUAL"]
+        next_qual: str = next_align["QUAL"]
+
+        curr_qual = _trim_softclip(curr_qual, curr_cigar)
+        next_qual = _trim_softclip(next_qual, next_cigar)
+
         # Check the length of microhomology
-        len_microhomology = _check_microhomology(cstag.to_sequence(curr_cstag), cstag.to_sequence(next_cstag))
+        len_microhomology = _get_length_of_microhomology(
+            cstag.to_sequence(curr_cstag), cstag.to_sequence(next_cstag), curr_qual, next_qual
+        )
         # Continue if no microhomology exists
         if len_microhomology == 0:
             idx += 1

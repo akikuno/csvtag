@@ -1,0 +1,4 @@
+@SQ	SN:1	LN:10
+read1	0	ref	1	60	5M	*	0		AAAAA	!!!!!	cs:Z:=AAAAA
+read1	16	ref	11	60	5M	*	0		TTCTT	!!!!!	cs:Z:=TT*tc=TT
+read1	0	ref	21	60	5M	*	0		GGGGG	!!!!!	cs:Z:=GGGGG

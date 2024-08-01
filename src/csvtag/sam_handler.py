@@ -27,13 +27,13 @@ def is_forward_strand(flag: int) -> bool:
     return (flag & 0x10) == 0
 
 
-def _split_cigar(cigar: str) -> Iterator[str]:
+def split_cigar(cigar: str) -> Iterator[str]:
     cigar_iter = iter(re.split(r"([MIDNSHPX=])", cigar))
     return (i + op for i, op in zip(cigar_iter, cigar_iter))
 
 
 def calculate_alignment_length(cigar: str) -> int:
-    return sum(int(c[:-1]) for c in _split_cigar(cigar) if c[-1] in "MDN=X")
+    return sum(int(c[:-1]) for c in split_cigar(cigar) if c[-1] in "MDN=X")
 
 
 ###########################################################
