@@ -46,9 +46,7 @@ def _padding_n(cs_tag: str, length: int, side: str = "left") -> str:
 
 
 def _unique_dicts(list_of_dicts: list[dict[str, str]]) -> list[dict[str, str]]:
-    # 各辞書をタプルに変換してセットに格納する
     unique_items = {tuple(d.items()) for d in list_of_dicts}
-    # セットから元の辞書形式に戻す
     unique_dicts = [dict(t) for t in unique_items]
     return unique_dicts
 
@@ -60,9 +58,9 @@ def convert_to_csvtag(alignments: list[dict[str, str | int]]) -> list[dict[str, 
         second_align = alignments[idx + 1]
         third_align = alignments[idx + 2]
 
-        # (1) first, second, thirdの, secondだけFlagが違う場合
-        # (2) firstのEndとsecondのStartおよびsecondのEndとthirdのStartの距離がすべて10塩基以内のとき
-        # (1) and (2) なら inversion とする. # ToDO 離れている領域は=Nを挿入する
+        # (1) When only the Flag of the second among first, second, and third is different
+        # (2) When the distance between the End of first and the Start of second, and the distance between the End of second and the Start of third are both within certain bases
+        # If both (1) and (2) are true, it is considered an inversion. Insert =N for regions that are apart.
 
         first_flag: int = first_align["FLAG"]
         second_flag: int = second_align["FLAG"]
@@ -80,7 +78,7 @@ def convert_to_csvtag(alignments: list[dict[str, str | int]]) -> list[dict[str, 
 
         is_second_strand_different = _is_second_strand_different(first_flag, second_flag, third_flag)
 
-        is_within_bases = _is_within_bases(first_end, second_pos, second_end, third_pos, base_num=100)
+        is_within_bases = _is_within_bases(first_end, second_pos, second_end, third_pos, base_num=50)
 
         if is_second_strand_different and is_within_bases:
             first_cstag: str = first_align["CSTAG"]
@@ -97,6 +95,7 @@ def convert_to_csvtag(alignments: list[dict[str, str | int]]) -> list[dict[str, 
             alignments[idx]["POS"] = first_pos
             alignments[idx + 1]["POS"] = first_pos
             alignments[idx + 2]["POS"] = first_pos
+
             alignments[idx]["CSTAG"] = csv_tag
             alignments[idx + 1]["CSTAG"] = csv_tag
             alignments[idx + 2]["CSTAG"] = csv_tag
@@ -128,22 +127,24 @@ def call_csvtag(path_sam: str | Path) -> Iterator[dict[str, str | int]]:
     alignments = remove_microhomology(alignments)
 
     alignments = list(alignments)
-    alignments.sort(key=lambda x: (x["QNAME"], x["POS"]))
-    for qname, alignments_grouped in groupby(alignments, key=lambda x: x["QNAME"]):
+    alignments.sort(key=lambda x: (x["QNAME"], x["RNAME"], x["POS"]))
+    for (qname, rname), alignments_grouped in groupby(alignments, key=lambda x: [x["QNAME"], x["RNAME"]]):
         alignments_grouped = list(alignments_grouped)
 
-        # すべてのcs tagをプラス鎖にする
+        # Convert all cs tags to the plus strand
         alignments_grouped = _revcomp_cstag_of_reverse_strand(alignments_grouped)
-        # すべてのCSVtagを大文字にする (注意：ここで正規のcs tagではなくなる)
+
+        # Convert all CSV tags to uppercase (Note: they will no longer be standard cs tags)
         alignments_grouped = _upper_cstag(alignments_grouped)
+
         if len(alignments_grouped) <= 2:
             yield from [
-                {"QNAME": qname, "CSVTAG": a["CSTAG"], "RNAME": a["RNAME"], "POS": a["POS"]} for a in alignments_grouped
+                {"QNAME": qname, "RNAME": rname, "POS": a["POS"], "CSVTAG": a["CSTAG"]} for a in alignments_grouped
             ]
             continue
 
         alignments_grouped = convert_to_csvtag(alignments_grouped)
 
         yield from _unique_dicts(
-            [{"QNAME": qname, "CSVTAG": a["CSTAG"], "RNAME": a["RNAME"], "POS": a["POS"]} for a in alignments_grouped]
+            [{"QNAME": qname, "RNAME": rname, "POS": a["POS"], "CSVTAG": a["CSTAG"]} for a in alignments_grouped]
         )
