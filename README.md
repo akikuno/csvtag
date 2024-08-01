@@ -18,23 +18,28 @@ This is essentially the same encoding as the [minimap2 cs tag](https://lh3.githu
 | ~       | [ACGTN]{2}[0-9]+[ACGTN]{2} | Intron length and splice signal |
 | [=+-*~] | [acgtn]                    | Inversion                       |
 
+> [!IMPORTANT] All csv tags are based on the forward strand of the reference sequence (SAM FLAG is 0). The reverse strand is entirely reverse complemented.
+
+
 # Definision of Inversion
 
-- Inversionの検出には、SAM/BAMファイルのPOSとFLAGを用います。
-  - FLAGによりprimary readsとそのstrandnessを判定します。
-  - POSにより、primary readsの10bp以内に隣接したreadsを抽出します
-  - 隣接したreadsのstrandnessが異なる場合、Inversionと判定します。
-  - 隣接したreadsの、さらに隣接したreadsに対しても、同様に処理します。
-- readsの重複については、QUALが高い塩基を優先します
-  - 同じQUALの場合には、参照ゲノムと合っている塩基を優先します
+- Inversion detection uses RNAME, POS, and FLAG from SAM/BAM files.
+  - Sort alignments by RNAME and POS.
+  - If there are 2 or fewer reads for a QNAME, there is no Inversion, so output the cstag in uppercase.
+  - If there are 3 or more reads for a QNAME, detect Inversion.
+    - Extract three alignments in order of ascending POS (first, second, third).
+    - (1) If the reads of first, second, and third are within 50 bp of each other, and only the second is reverse-oriented, then the second is determined to be an Inversion.
+    - Reverse complement the cs tag of the second and output it as a csv tag in lowercase.
+    - If there are gaps between first, second, and third, fill them with `N`.
+  - Apply the same process to any adjacent reads.
 
 
 # Functions
 
 - `csvtag.call()`: Generate a csv tag
 - `csvtag.to_sequence()`: Reconstruct a reference subsequence from the alignment
-- `csvtag.to_vcf()`: Generate an VCF representation
-- `csvtag.to_html()`: Generate an HTML representation
+<!-- - `csvtag.to_vcf()`: Generate an VCF representation -->
+<!-- - `csvtag.to_html()`: Generate an HTML representation -->
 
 
 # Usage

@@ -12,13 +12,13 @@ def _split_csv_tag_by_insertion(csv_tag: Iterator[str]) -> Iterator[str]:
 
 
 def combine_splitted_csv_tag(splitted_csv_tag: Iterator[str]) -> str:
-    """Generate CS SPLIT, a comma-separated nucleotide sequence
+    """Conbine splitted csv tag
 
     Args:
-        csvtag (str): a long format csvtag
+        splitted csv tag (str)
 
     Returns:
-        str: csv split
+        str: csv tag
 
     Examples:
         >>> splitted_csv_tag = iter(["=A", "+T|+T|+T|=C", "=C", "-A", "-A", "=T", "*AG", "=T", "=T"])
@@ -52,3 +52,6 @@ def combine_splitted_csv_tag(splitted_csv_tag: Iterator[str]) -> str:
 
     combined_csv_tags.append(prev_prefix + "".join(combined_csv))
     return "".join(combined_csv_tags)
+
+
+
