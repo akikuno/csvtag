@@ -24,7 +24,7 @@ This is essentially the same encoding as the [minimap2 cs tag](https://lh3.githu
 
 # Definision of Inversion
 
-- Inversion detection uses RNAME, POS, and FLAG from SAM/BAM files.
+- Inversion detection uses RNAME, POS, and FLAG from SAM files.
   - Sort alignments by RNAME and POS.
   - If there are 2 or fewer reads for a QNAME, there is no Inversion, so output the cstag in uppercase.
   - If there are 3 or more reads for a QNAME, detect Inversion.
