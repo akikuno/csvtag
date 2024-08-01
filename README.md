@@ -1,8 +1,8 @@
 [![Licence](https://img.shields.io/badge/License-MIT-9cf.svg?style=flat-square)](https://choosealicense.com/licenses/mit/)
 
-# csv tag
+# csvtag
 
-csvtag is a toolkit for `csv` tag, a format of cs tag that supports inversion.
+`csvtag` is a toolkit for `csv` tag, a format of cs tag that supports inversion.
 
 # Specification
 
@@ -18,7 +18,8 @@ This is essentially the same encoding as the [minimap2 cs tag](https://lh3.githu
 | ~       | [ACGTN]{2}[0-9]+[ACGTN]{2} | Intron length and splice signal |
 | [=+-*~] | [acgtn]                    | Inversion                       |
 
-> [!IMPORTANT] All csv tags are based on the forward strand of the reference sequence (SAM FLAG is 0). The reverse strand is entirely reverse complemented.
+> [!IMPORTANT]
+> All csv tags are based on the forward strand of the reference sequence (SAM FLAG is 0). The reverse strand is entirely reverse complemented.
 
 
 # Definision of Inversion
