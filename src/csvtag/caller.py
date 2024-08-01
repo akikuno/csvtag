@@ -94,6 +94,9 @@ def convert_to_csvtag(alignments: list[dict[str, str | int]]) -> list[dict[str, 
 
             csv_tag = first_cstag.upper() + second_cstag.lower() + third_cstag.upper()
 
+            alignments[idx]["POS"] = first_pos
+            alignments[idx + 1]["POS"] = first_pos
+            alignments[idx + 2]["POS"] = first_pos
             alignments[idx]["CSTAG"] = csv_tag
             alignments[idx + 1]["CSTAG"] = csv_tag
             alignments[idx + 2]["CSTAG"] = csv_tag
@@ -116,7 +119,7 @@ def _upper_cstag(alignments: list[dict[str, str]]) -> list[dict[str, str]]:
     return alignments
 
 
-def call_csvtag(path_sam: str | Path) -> Iterator[dict[str, str]]:
+def call_csvtag(path_sam: str | Path) -> Iterator[dict[str, str | int]]:
     """
     output: [{"QNAME": "read1", "CSVTAG": "=AAAAA"], {"QNAME": "read1", "CSVTAG": "=TTTTT"}, ...]}
     """
@@ -134,9 +137,13 @@ def call_csvtag(path_sam: str | Path) -> Iterator[dict[str, str]]:
         # すべてのCSVtagを大文字にする (注意：ここで正規のcs tagではなくなる)
         alignments_grouped = _upper_cstag(alignments_grouped)
         if len(alignments_grouped) <= 2:
-            yield from [{"QNAME": qname, "CSVTAG": a["CSTAG"]} for a in alignments_grouped]
+            yield from [
+                {"QNAME": qname, "CSVTAG": a["CSTAG"], "RNAME": a["RNAME"], "POS": a["POS"]} for a in alignments_grouped
+            ]
             continue
 
         alignments_grouped = convert_to_csvtag(alignments_grouped)
 
-        yield from _unique_dicts([{"QNAME": qname, "CSVTAG": a["CSTAG"]} for a in alignments_grouped])
+        yield from _unique_dicts(
+            [{"QNAME": qname, "CSVTAG": a["CSTAG"], "RNAME": a["RNAME"], "POS": a["POS"]} for a in alignments_grouped]
+        )

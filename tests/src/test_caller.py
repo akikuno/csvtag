@@ -52,7 +52,7 @@ def test_padding_n(cs_tag, length, side, expected):
 def test_call_csvtag_one_alignment():
     path_sam = Path("tests/data/one_alignment.sam")
     result = list(call_csvtag(path_sam))
-    expected = [{"QNAME": "read1", "CSVTAG": "=AAAAA"}]
+    expected = [{"QNAME": "read1", "CSVTAG": "=AAAAA", "POS": 1, "RNAME": "ref"}]
     assert result == expected, f"Expected {expected}, but got {result}"
 
 
@@ -60,8 +60,8 @@ def test_call_csvtag_two_alignments():
     path_sam = Path("tests/data/two_alignments.sam")
     result = list(call_csvtag(path_sam))
     expected = [
-        {"QNAME": "read1", "CSVTAG": "=AAAAA"},
-        {"QNAME": "read1", "CSVTAG": "=AA*AG=AA"},
+        {"QNAME": "read1", "CSVTAG": "=AAAAA", "POS": 1, "RNAME": "ref"},
+        {"QNAME": "read1", "CSVTAG": "=AA*AG=AA", "POS": 100, "RNAME": "ref"},
     ]
     assert result == expected, f"Expected {expected}, but got {result}"
 
@@ -73,6 +73,20 @@ def test_call_csvtag_three_alignments_with_inv():
     path_sam = Path("tests/data/three_alignments_witn_inv.sam")
     result = list(call_csvtag(path_sam))
     expected = [
-        {"QNAME": "read1", "CSVTAG": "=AAAAANNNNN=aa*ag=aa=NNNNNGGGGG"},
+        {"QNAME": "read1", "CSVTAG": "=AAAAANNNNN=aa*ag=aa=NNNNNGGGGG", "POS": 1, "RNAME": "ref"},
     ]
+    assert result == expected, f"Expected {expected}, but got {result}"
+
+
+def test_call_csvtag_four_alignments():
+    path_sam = Path("tests/data/four_alignments.sam")
+    result = list(call_csvtag(path_sam))
+    result.sort(key=lambda x: [x["QNAME"], x["POS"]])
+    expected = [
+        {"QNAME": "read1", "CSVTAG": "=AAAAANNNNN=aa*ag=aa=NNNNNGGGGG", "POS": 1, "RNAME": "ref"},
+        {"QNAME": "read1", "CSVTAG": "=ACGT", "POS": 201, "RNAME": "ref"},
+        {"QNAME": "read2", "CSVTAG": "=ACGT", "POS": 1, "RNAME": "ref"},
+        {"QNAME": "read2", "CSVTAG": "=AAAAANNNNN=aa*ag=aa=NNNNNGGGGG", "POS": 201, "RNAME": "ref"},
+    ]
+    expected.sort(key=lambda x: [x["QNAME"], x["POS"]])
     assert result == expected, f"Expected {expected}, but got {result}"
