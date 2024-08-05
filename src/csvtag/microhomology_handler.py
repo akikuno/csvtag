@@ -6,23 +6,12 @@ from itertools import groupby
 import cstag
 
 from csvtag.combiner import combine_splitted_csv_tag as combine
-from csvtag.sam_handler import split_cigar
+from csvtag.sam_handler import trim_softclip
 from csvtag.splitter import split_by_nucleotide as split
 
 ###########################################################
 # remove_microholomogy
 ###########################################################
-
-
-def _trim_softclip(qual: str, cigar: str) -> str:
-    cigar_split = list(split_cigar(cigar))
-    if cigar_split[0].endswith("S"):
-        softclip_length = int(cigar_split[0][:-1])
-        qual = qual[softclip_length:]
-    if cigar_split[-1].endswith("S"):
-        softclip_length = int(cigar_split[-1][:-1])
-        qual = qual[:-softclip_length]
-    return qual
 
 
 def _get_length_of_microhomology(curr_sequence: str, next_sequence: str, curr_qual: str, next_qual: str) -> int:
@@ -52,8 +41,8 @@ def _trim_microhomology(alignments: list[dict[str, str | int]]) -> list[dict[str
         curr_qual: str = curr_align["QUAL"]
         next_qual: str = next_align["QUAL"]
 
-        curr_qual = _trim_softclip(curr_qual, curr_cigar)
-        next_qual = _trim_softclip(next_qual, next_cigar)
+        curr_qual = trim_softclip(curr_qual, curr_cigar)
+        next_qual = trim_softclip(next_qual, next_cigar)
 
         # Check the length of microhomology
         len_microhomology = _get_length_of_microhomology(

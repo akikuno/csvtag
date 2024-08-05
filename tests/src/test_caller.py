@@ -66,14 +66,13 @@ def test_call_csvtag_two_alignments():
     assert result == expected, f"Expected {expected}, but got {result}"
 
 
-# TODO: Add inversion tests
-
-
 def test_call_csvtag_three_alignments_with_inv():
     path_sam = Path("tests/data/three_alignments_witn_inv.sam")
     result = list(call_csvtag(path_sam))
     expected = [
-        {"QNAME": "read1", "CSVTAG": "=AAAAANNNNN=aa*ag=aa=NNNNNGGGGG", "POS": 1, "RNAME": "ref"},
+        {"QNAME": "read1", "RNAME": "ref", "POS": 1, "CSVTAG": "=AAAAA"},
+        {"QNAME": "read1", "RNAME": "ref", "POS": 11, "CSVTAG": "=aa*ag=aa"},
+        {"QNAME": "read1", "RNAME": "ref", "POS": 21, "CSVTAG": "=GGGGG"},
     ]
     assert result == expected, f"Expected {expected}, but got {result}"
 
@@ -81,12 +80,44 @@ def test_call_csvtag_three_alignments_with_inv():
 def test_call_csvtag_four_alignments():
     path_sam = Path("tests/data/four_alignments.sam")
     result = list(call_csvtag(path_sam))
-    result.sort(key=lambda x: [x["QNAME"], x["POS"]])
+    result.sort(key=lambda x: [x["QNAME"], x["RNAME"], x["POS"]])
     expected = [
-        {"QNAME": "read1", "CSVTAG": "=AAAAANNNNN=aa*ag=aa=NNNNNGGGGG", "POS": 1, "RNAME": "ref"},
-        {"QNAME": "read1", "CSVTAG": "=ACGT", "POS": 201, "RNAME": "ref"},
-        {"QNAME": "read2", "CSVTAG": "=ACGT", "POS": 1, "RNAME": "ref"},
-        {"QNAME": "read2", "CSVTAG": "=AAAAANNNNN=aa*ag=aa=NNNNNGGGGG", "POS": 201, "RNAME": "ref"},
+        {"QNAME": "read1", "RNAME": "ref", "POS": 1, "CSVTAG": "=AAAAA"},
+        {"QNAME": "read1", "RNAME": "ref", "POS": 11, "CSVTAG": "=aa*ag=aa"},
+        {"QNAME": "read1", "RNAME": "ref", "POS": 21, "CSVTAG": "=GGGGG"},
+        {"QNAME": "read1", "RNAME": "ref", "POS": 201, "CSVTAG": "=ACGT"},
+        {"QNAME": "read2", "RNAME": "ref", "POS": 1, "CSVTAG": "=ACGT"},
+        {"QNAME": "read2", "RNAME": "ref", "POS": 201, "CSVTAG": "=AAAAA"},
+        {"QNAME": "read2", "RNAME": "ref", "POS": 211, "CSVTAG": "=aa*ag=aa"},
+        {"QNAME": "read2", "RNAME": "ref", "POS": 221, "CSVTAG": "=GGGGG"},
     ]
     expected.sort(key=lambda x: [x["QNAME"], x["POS"]])
+    assert result == expected, f"Expected {expected}, but got {result}"
+
+
+def test_call_csvtag_inversion_sr_simulated():
+    path_sam = Path("tests/data/inversion_sr_simulated.sam")
+    result = list(call_csvtag(path_sam))
+    expected = [
+        {
+            "CSVTAG": "=GGGGTATGTGGCTGCGTGGTCAAATGTGCGGCATACGTATTTGCTCGGCGTGCTTGCTCTCACGAACTTGACCTGGAGATCAAGGAGATGTTTCTTGTCCAACTGGACAGCGCTTCAACGGAATGGATCTACGTTACAGCCTGCATAAAGAAAACGGAGTTGCCGAGGACGAAAGCGACTTTAGGTTCTGTCCGTTGTCTTTGGCGGAAAACTTCCACTCAGGAAGCAGACACTGATTGACACGGTTTAGCA",
+            "POS": 1,
+            "QNAME": "read1",
+            "RNAME": "control",
+        },
+        {
+            "CSVTAG": "=gcacttgatcgttttgctgtagaaaaaacttaataaacagaatgccgatgaaggcactactgtactaatagggccgggctacatgttaactacaaggctataacctattgatgacccggtccatacataacttggtatcgtgcatgtagcgttcaagggctatagcaattccgacggaaatccattggggtaacgccttagaataatatactggcctatcgcaacacaaccacctctgccgtgtaatccgagggtggccacgacaatcgaaggtatggtcgaccgttgtaggtaattctaggcgatgaggggtccttctttcataaattttcttcaggacattgttcacgtaaactaccaggattaaccgtcgtagtgagcccgcttggttttgggaactcgtgtcttaaattcgtctccgattagcgcactatactatactttaatcccagacataccgatattaaaccactcaatttgacctaatcctcaaaccttctgc",
+            "POS": 250,
+            "QNAME": "read1",
+            "RNAME": "control",
+        },
+        {
+            "CSVTAG": "=TGCACTTCCACAGAGCGCGGTAGAGACTCATCCACCCGGCAGCTCTGTAATAGGGACTAAAAAAGTGATGATAATCATGAGTGCCGCGTTATGGTGGTGTCGGATCAGAGCGGTCTTACGACCAGTCGTATGCCTTCTCGAGTTCCGTCCGGTTAAGCGTGACAGTCCCAGTGAACCCACAAACCGTGATGGCTGTCCTTGGAGTCATACGCAAGAAGGATGGTCTCCAGACACCGGCGCACCAGTTTTCAC",
+            "POS": 749,
+            "QNAME": "read1",
+            "RNAME": "control",
+        },
+    ]
+    result.sort(key=lambda x: [x["QNAME"], x["RNAME"], x["POS"]])
+    expected.sort(key=lambda x: [x["QNAME"], x["RNAME"], x["POS"]])
     assert result == expected, f"Expected {expected}, but got {result}"

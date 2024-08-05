@@ -7,12 +7,12 @@ from pathlib import Path
 import cstag
 
 from csvtag.microhomology_handler import remove_microhomology
+from csvtag.overlap_handler import remove_overlapped_alignments
 from csvtag.sam_handler import (
     calculate_alignment_length,
     extract_alignment,
     is_forward_strand,
     read_sam,
-    remove_overlapped_alignments,
 )
 
 
@@ -51,8 +51,9 @@ def _unique_dicts(list_of_dicts: list[dict[str, str]]) -> list[dict[str, str]]:
     return unique_dicts
 
 
-def convert_to_csvtag(alignments: list[dict[str, str | int]]) -> list[dict[str, str | int]]:
+def convert_to_csvtag(alignments: list[dict[str, str | int]]) -> Iterator[dict[str, str | int]]:
     idx = 0
+    visited = set()
     while idx + 2 < len(alignments):
         first_align = alignments[idx]
         second_align = alignments[idx + 1]
@@ -80,39 +81,82 @@ def convert_to_csvtag(alignments: list[dict[str, str | int]]) -> list[dict[str, 
 
         is_within_bases = _is_within_bases(first_end, second_pos, second_end, third_pos, base_num=50)
 
+        first_cstag: str = first_align["CSTAG"]
+        second_cstag: str = second_align["CSTAG"]
+        # third_cstag: str = third_align["CSTAG"]
+
         if is_second_strand_different and is_within_bases:
-            first_cstag: str = first_align["CSTAG"]
-            second_cstag: str = second_align["CSTAG"]
-            third_cstag: str = third_align["CSTAG"]
+            #     if second_pos - first_end > 0:
+            #         first_cstag = _padding_n(first_cstag, second_pos - first_end, side="right")
+            #     if third_pos - second_end > 0:
+            #         third_cstag = _padding_n(third_cstag, third_pos - second_end, side="left")
 
-            if second_pos - first_end > 0:
-                first_cstag = _padding_n(first_cstag, second_pos - first_end, side="right")
-            if third_pos - second_end > 0:
-                third_cstag = _padding_n(third_cstag, third_pos - second_end, side="left")
+            # csv_tag = first_cstag + second_cstag.lower() + third_cstag
 
-            csv_tag = first_cstag.upper() + second_cstag.lower() + third_cstag.upper()
+            yield {
+                "QNAME": first_align["QNAME"],
+                "RNAME": first_align["RNAME"],
+                "POS": first_pos,
+                "CSVTAG": first_cstag,
+            }
+            yield {
+                "QNAME": second_align["QNAME"],
+                "RNAME": second_align["RNAME"],
+                "POS": second_pos,
+                "CSVTAG": second_cstag.lower(),
+            }
 
-            alignments[idx]["POS"] = first_pos
-            alignments[idx + 1]["POS"] = first_pos
-            alignments[idx + 2]["POS"] = first_pos
+            visited.add(idx)
+            visited.add(idx + 1)
+            # visited.add(idx + 2)
+            idx += 2
 
-            alignments[idx]["CSTAG"] = csv_tag
-            alignments[idx + 1]["CSTAG"] = csv_tag
-            alignments[idx + 2]["CSTAG"] = csv_tag
+        else:
+            if idx not in visited:
+                yield {
+                    "QNAME": first_align["QNAME"],
+                    "RNAME": first_align["RNAME"],
+                    "POS": first_pos,
+                    "CSVTAG": first_cstag,
+                }
+            # if idx + 1 not in visited:
+            #     yield {
+            #         "QNAME": second_align["QNAME"],
+            #         "RNAME": second_align["RNAME"],
+            #         "POS": second_pos,
+            #         "CSVTAG": second_cstag,
+            #     }
+            # if idx + 2 not in visited:
+            #     yield {
+            #         "QNAME": third_align["QNAME"],
+            #         "RNAME": third_align["RNAME"],
+            #         "POS": third_pos,
+            #         "CSVTAG": third_cstag,
+            #     }
 
-        idx += 1
+            visited.add(idx)
+            # visited.add(idx + 1)
+            # visited.add(idx + 2)
+            idx += 1
 
-    return alignments
+    for i in range(idx, len(alignments)):
+        alignment = alignments[i]
+        yield {
+            "QNAME": alignment["QNAME"],
+            "RNAME": alignment["RNAME"],
+            "POS": alignment["POS"],
+            "CSVTAG": alignment["CSTAG"],
+        }
 
 
-def _revcomp_cstag_of_reverse_strand(alignments: list[dict[str, str]]) -> list[dict[str, str]]:
+def _revcomp_cstag_of_reverse_strand(alignments: list[dict[str, str | int]]) -> list[dict[str, str]]:
     for alignment in alignments:
         if not is_forward_strand(alignment["FLAG"]):
             alignment["CSTAG"] = cstag.revcomp(alignment["CSTAG"])
     return alignments
 
 
-def _upper_cstag(alignments: list[dict[str, str]]) -> list[dict[str, str]]:
+def _upper_cstag(alignments: list[dict[str, str | int]]) -> list[dict[str, str | int]]:
     for alignment in alignments:
         alignment["CSTAG"] = alignment["CSTAG"].upper()
     return alignments
@@ -138,13 +182,8 @@ def call_csvtag(path_sam: str | Path) -> Iterator[dict[str, str | int]]:
         alignments_grouped = _upper_cstag(alignments_grouped)
 
         if len(alignments_grouped) <= 2:
-            yield from [
-                {"QNAME": qname, "RNAME": rname, "POS": a["POS"], "CSVTAG": a["CSTAG"]} for a in alignments_grouped
-            ]
+            for alignment in alignments_grouped:
+                yield {"QNAME": qname, "RNAME": rname, "POS": alignment["POS"], "CSVTAG": alignment["CSTAG"]}
             continue
 
-        alignments_grouped = convert_to_csvtag(alignments_grouped)
-
-        yield from _unique_dicts(
-            [{"QNAME": qname, "RNAME": rname, "POS": a["POS"], "CSVTAG": a["CSTAG"]} for a in alignments_grouped]
-        )
+        yield from convert_to_csvtag(alignments_grouped)

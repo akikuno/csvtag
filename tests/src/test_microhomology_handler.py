@@ -2,22 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from csvtag.microhomology_handler import _get_length_of_microhomology, _trim_microhomology, _trim_softclip
-
-
-@pytest.mark.parametrize(
-    "qual, cigar, expected",
-    [
-        ("ABCDEFGHI", "2S7M", "CDEFGHI"),  # Remove softclip at the beginning
-        ("ABCDEFGHI", "7M2S", "ABCDEFG"),  # Remove softclip at the end
-        ("ABCDEFGHI", "2S5M2S", "CDEFG"),  # Remove softclip at both ends
-        ("ABCDEFGHI", "9M", "ABCDEFGHI"),  # No softclip
-        ("ABCDEFGHI", "1S8M", "BCDEFGHI"),  # Remove 1S at the beginning
-        ("ABCDEFGHI", "8M1S", "ABCDEFGH"),  # Remove 1S at the end
-    ],
-)
-def test_trim_softclip(qual, cigar, expected):
-    assert _trim_softclip(qual, cigar) == expected
+from csvtag.microhomology_handler import _get_length_of_microhomology, _trim_microhomology
 
 
 @pytest.mark.parametrize(
