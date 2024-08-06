@@ -39,19 +39,25 @@ def split_by_inversion(csv_tag: str) -> Iterator[str]:
     """
     csv_tag_inversion = []
     is_inversion = False
+
     for csv in split_by_tag(csv_tag):
         nucleotide = csv[-1]
         if nucleotide.islower():
             csv_tag_inversion.append(csv)
             if not is_inversion:
                 is_inversion = True
+
         elif is_inversion:
             yield ("".join(csv_tag_inversion))
             yield csv
             csv_tag_inversion = []
             is_inversion = False
+
         else:
             yield csv
+
+    if csv_tag_inversion:  # if the last element is an inversion
+        yield "".join(csv_tag_inversion)
 
 
 ###########################################################
@@ -125,3 +131,4 @@ def split_by_nucleotide(csv_tag: str) -> Iterator[str]:
         else:
             csv_tags += handle_match_deletion(csv_tag, operand)
     yield from csv_tags
+

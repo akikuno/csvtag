@@ -64,6 +64,21 @@ def combine_splitted_tags(splitted_csv_tag: Iterator[str]) -> str:
 ###########################################################
 
 
+def _group_tags_by_distance(csv_tags: list[str], n_lengths: list[int], distance: int) -> list[list[str]]:
+    groups = []
+    current_group = [csv_tags[0]]
+
+    for i in range(len(n_lengths)):
+        if n_lengths[i] <= distance:
+            current_group.append(csv_tags[i + 1])
+        else:
+            groups.append(current_group)
+            current_group = [csv_tags[i + 1]]
+
+    groups.append(current_group)
+    return groups
+
+
 def _padding_n(csv_tag: str, n_length: int, side: str = "left") -> str:
     csv_tag_split = list(split_by_tag(csv_tag))
     if side == "left":

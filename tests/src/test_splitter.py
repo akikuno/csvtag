@@ -49,3 +49,4 @@ def test_split_by_inversion(csv_tag, expected):
 def test_split_by_nucleotide(csv_tag, expected):
     result = list(split_by_nucleotide(csv_tag))
     assert result == expected, f"Expected {expected}, but got {result}"
+

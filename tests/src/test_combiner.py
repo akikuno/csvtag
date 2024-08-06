@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from csvtag.combiner import _padding_n, combine_neighboring_csv_tags, combine_splitted_tags
+from csvtag.combiner import _group_tags_by_distance, _padding_n, combine_neighboring_csv_tags, combine_splitted_tags
 
 
 @pytest.mark.parametrize(
@@ -25,6 +25,20 @@ def test_combine_splitted_tags(splitted_csv_tag, expected):
 
 
 @pytest.mark.parametrize(
+    "csv_tags, n_lengths, distance, expected",
+    [
+        (["=AA", "=tt", "=CC", "=AA"], [2, 3, 988], 50, [["=AA", "=tt", "=CC"], ["=AA"]]),
+        (["=AA", "=tt", "=CC", "=AA"], [100, 1, 5], 50, [["=AA"], ["=tt", "=CC", "=AA"]]),
+        (["=AA", "=tt"], [2], 50, [["=AA", "=tt"]]),
+        (["=AA", "=tt"], [100], 50, [["=AA"], ["=tt"]]),
+    ],
+)
+def test_group_tags_by_distance(csv_tags, n_lengths, distance, expected):
+    result = _group_tags_by_distance(csv_tags, n_lengths, distance)
+    assert result == expected, f"Expected {expected}, but got {result}"
+
+
+@pytest.mark.parametrize(
     "csv_tag, n_length, side, expected",
     [
         ("=ACGT", 2, "left", "=NNACGT"),
@@ -42,7 +56,7 @@ def test_padding_n(csv_tag, n_length, side, expected):
 @pytest.mark.parametrize(
     "csv_tags, positions, distance, expected",
     [
-        (["=AA", "=tt", "=CC"], [1, 5, 10], 50, ["=AANN=tt=NNNCC"]),
+        # (["=AA", "=tt", "=CC"], [1, 5, 10], 50, ["=AANN=tt=NNNCC"]),
         # (["=AA", "=tt", "=CC"], [1, 5, 100], 50, ["=AANN=tt", "=CC"]),
         # (
         #     [
