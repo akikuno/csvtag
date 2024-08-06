@@ -6,7 +6,6 @@ from pathlib import Path
 
 import cstag
 
-from csvtag.microhomology_handler import remove_microhomology
 from csvtag.overlap_handler import remove_overlapped_alignments
 from csvtag.sam_handler import (
     calculate_alignment_length,
@@ -25,33 +24,22 @@ def _is_second_strand_different(first_flag: int, second_flag: int, third_flag: i
         return False
 
 
-def _is_within_bases(first_end: int, second_pos: int, second_end: int, third_pos: int, base_num: int = 100) -> bool:
+def _is_within_bases(
+    first_end: int,
+    second_pos: int,
+    second_end: int,
+    third_pos: int,
+    base_num: int = 100,
+) -> bool:
     if second_pos - first_end <= base_num and third_pos - second_end <= base_num:
         return True
     else:
         return False
 
 
-def _padding_n(cs_tag: str, length: int, side: str = "left") -> str:
-    if side == "left":
-        if cstag.split(cs_tag)[0].startswith("="):
-            return "=" + ("N" * length) + cs_tag.lstrip("=")
-        else:
-            return "=" + ("N" * length) + cs_tag
-    else:
-        if cstag.split(cs_tag)[-1].startswith("="):
-            return cs_tag + ("N" * length)
-        else:
-            return cs_tag + "=" + ("N" * length)
-
-
-def _unique_dicts(list_of_dicts: list[dict[str, str]]) -> list[dict[str, str]]:
-    unique_items = {tuple(d.items()) for d in list_of_dicts}
-    unique_dicts = [dict(t) for t in unique_items]
-    return unique_dicts
-
-
-def convert_to_csvtag(alignments: list[dict[str, str | int]]) -> Iterator[dict[str, str | int]]:
+def convert_to_csvtag(
+    alignments: list[dict[str, str | int]],
+) -> Iterator[dict[str, str | int]]:
     idx = 0
     visited = set()
     while idx + 2 < len(alignments):
@@ -60,7 +48,8 @@ def convert_to_csvtag(alignments: list[dict[str, str | int]]) -> Iterator[dict[s
         third_align = alignments[idx + 2]
 
         # (1) When only the Flag of the second among first, second, and third is different
-        # (2) When the distance between the End of first and the Start of second, and the distance between the End of second and the Start of third are both within certain bases
+        # (2) When the distance between the End of first and the Start of second,
+        #     and the distance between the End of second and the Start of third are both within certain bases
         # If both (1) and (2) are true, it is considered an inversion. Insert =N for regions that are apart.
 
         first_flag: int = first_align["FLAG"]
@@ -108,7 +97,6 @@ def convert_to_csvtag(alignments: list[dict[str, str | int]]) -> Iterator[dict[s
 
             visited.add(idx)
             visited.add(idx + 1)
-            # visited.add(idx + 2)
             idx += 2
 
         else:
@@ -119,24 +107,8 @@ def convert_to_csvtag(alignments: list[dict[str, str | int]]) -> Iterator[dict[s
                     "POS": first_pos,
                     "CSVTAG": first_cstag,
                 }
-            # if idx + 1 not in visited:
-            #     yield {
-            #         "QNAME": second_align["QNAME"],
-            #         "RNAME": second_align["RNAME"],
-            #         "POS": second_pos,
-            #         "CSVTAG": second_cstag,
-            #     }
-            # if idx + 2 not in visited:
-            #     yield {
-            #         "QNAME": third_align["QNAME"],
-            #         "RNAME": third_align["RNAME"],
-            #         "POS": third_pos,
-            #         "CSVTAG": third_cstag,
-            #     }
 
             visited.add(idx)
-            # visited.add(idx + 1)
-            # visited.add(idx + 2)
             idx += 1
 
     for i in range(idx, len(alignments)):
@@ -149,7 +121,9 @@ def convert_to_csvtag(alignments: list[dict[str, str | int]]) -> Iterator[dict[s
         }
 
 
-def _revcomp_cstag_of_reverse_strand(alignments: list[dict[str, str | int]]) -> list[dict[str, str]]:
+def _revcomp_cstag_of_reverse_strand(
+    alignments: list[dict[str, str | int]],
+) -> list[dict[str, str]]:
     for alignment in alignments:
         if not is_forward_strand(alignment["FLAG"]):
             alignment["CSTAG"] = cstag.revcomp(alignment["CSTAG"])
@@ -168,7 +142,6 @@ def call_csvtag(path_sam: str | Path) -> Iterator[dict[str, str | int]]:
     """
     alignments: Iterator[dict[str, str | int]] = extract_alignment(read_sam(path_sam))
     alignments = remove_overlapped_alignments(alignments)
-    alignments = remove_microhomology(alignments)
 
     alignments = list(alignments)
     alignments.sort(key=lambda x: (x["QNAME"], x["RNAME"], x["POS"]))
@@ -183,7 +156,12 @@ def call_csvtag(path_sam: str | Path) -> Iterator[dict[str, str | int]]:
 
         if len(alignments_grouped) <= 2:
             for alignment in alignments_grouped:
-                yield {"QNAME": qname, "RNAME": rname, "POS": alignment["POS"], "CSVTAG": alignment["CSTAG"]}
+                yield {
+                    "QNAME": qname,
+                    "RNAME": rname,
+                    "POS": alignment["POS"],
+                    "CSVTAG": alignment["CSTAG"],
+                }
             continue
 
         yield from convert_to_csvtag(alignments_grouped)

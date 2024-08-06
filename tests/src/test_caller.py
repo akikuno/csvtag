@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from csvtag.caller import _is_second_strand_different, _is_within_bases, _padding_n, call_csvtag
+from csvtag.caller import _is_second_strand_different, _is_within_bases, call_csvtag
 
 
 @pytest.mark.parametrize(
@@ -33,20 +33,6 @@ def test_is_second_strand_different(first_flag, second_flag, third_flag, expecte
 def test_is_within_bases(first_end, second_pos, second_end, third_pos, expected):
     assert _is_within_bases(first_end, second_pos, second_end, third_pos, base_num=10) == expected
 
-
-@pytest.mark.parametrize(
-    "cs_tag, length, side, expected",
-    [
-        ("=ACGT", 2, "left", "=NNACGT"),
-        ("*AC=ACGT", 2, "left", "=NN*AC=ACGT"),
-        ("=ACGT", 2, "right", "=ACGTNN"),
-        ("=A*TC=GT", 2, "right", "=A*TC=GTNN"),
-        ("=A*TC", 2, "right", "=A*TC=NN"),
-    ],
-)
-def test_padding_n(cs_tag, length, side, expected):
-    result = _padding_n(cs_tag, length, side)
-    assert result == expected, f"Expected {expected}, but got {result}"
 
 
 def test_call_csvtag_one_alignment():

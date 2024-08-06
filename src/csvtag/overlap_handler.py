@@ -67,10 +67,14 @@ def _is_complete_overlapped(alignments_overlapped: OverlappedAlignment) -> bool:
 
 
 def _is_overlapped(alignments_overlapped: OverlappedAlignment) -> bool:
-    return _is_complete_overlapped(alignments_overlapped)  # or _is_non_microhomologic_overlapped(alignments_overlapped)
+    return _is_complete_overlapped(
+        alignments_overlapped
+    )  # or _is_non_microhomologic_overlapped(alignments_overlapped)
 
 
-def _remove_duplicates(list_of_dicts: list[dict[str, str | int]]) -> list[dict[str, str | int]]:
+def _remove_duplicates(
+    list_of_dicts: list[dict[str, str | int]],
+) -> list[dict[str, str | int]]:
     """
     Remove duplicate dictionaries from a list of dictionaries.
 
@@ -84,7 +88,9 @@ def _remove_duplicates(list_of_dicts: list[dict[str, str | int]]) -> list[dict[s
     return [dict(t) for t in unique_dicts]
 
 
-def remove_overlapped_alignments(alignments: Iterator[dict[str, str | int]]) -> Iterator[dict[str, str | int]]:
+def remove_overlapped_alignments(
+    alignments: Iterator[dict[str, str | int]],
+) -> Iterator[dict[str, str | int]]:
     """Remove non-microhomologic overlapped reads within the same QNAME.
     The overlapped sequences can be (1) realignments by microhomology or (2) resequence by sequencing error.
     The 'realignments' is not sequencing errors, and it preserves the same sequence.

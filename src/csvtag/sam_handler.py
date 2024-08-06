@@ -29,7 +29,6 @@ def calculate_alignment_length(cigar: str) -> int:
 
 
 def trim_softclip(qual: str, cigar: str) -> str:
-
     cigar_split = list(split_cigar(cigar))
 
     if cigar_split[0].endswith("S"):

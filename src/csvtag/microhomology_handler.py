@@ -5,7 +5,7 @@ from itertools import groupby
 
 import cstag
 
-from csvtag.combiner import combine_splitted_csv_tag as combine
+from csvtag.combiner import combine_splitted_tags
 from csvtag.sam_handler import trim_softclip
 from csvtag.splitter import split_by_nucleotide as split
 
@@ -24,7 +24,9 @@ def _get_length_of_microhomology(curr_sequence: str, next_sequence: str, curr_qu
     return len_microhomology
 
 
-def _trim_microhomology(alignments: list[dict[str, str | int]]) -> list[dict[str, str | int]]:
+def _trim_microhomology(
+    alignments: list[dict[str, str | int]],
+) -> list[dict[str, str | int]]:
     """
     alignments = [{"QNAME": read1, "CSTAG": "=AAATTT"}, {"QNAME": read1, "CSTAG": "=TTTCCC"}]
     _trim_microhomology(alignments)
@@ -46,7 +48,10 @@ def _trim_microhomology(alignments: list[dict[str, str | int]]) -> list[dict[str
 
         # Check the length of microhomology
         len_microhomology = _get_length_of_microhomology(
-            cstag.to_sequence(curr_cstag), cstag.to_sequence(next_cstag), curr_qual, next_qual
+            cstag.to_sequence(curr_cstag),
+            cstag.to_sequence(next_cstag),
+            curr_qual,
+            next_qual,
         )
         # Continue if no microhomology exists
         if len_microhomology == 0:
@@ -60,16 +65,18 @@ def _trim_microhomology(alignments: list[dict[str, str | int]]) -> list[dict[str
         # Remove frequently mutated microhomology region from the alignment's CSTAG
         if matches_in_curr >= matches_in_next:
             cstag_trimmed = list(split(next_cstag))[len_microhomology:]
-            alignments[idx + 1]["CSTAG"] = combine(cstag_trimmed)
+            alignments[idx + 1]["CSTAG"] = combine_splitted_tags(cstag_trimmed)
         else:
             cstag_trimmed = list(split(curr_cstag))[:-len_microhomology]
-            alignments[idx]["CSTAG"] = combine(cstag_trimmed)
+            alignments[idx]["CSTAG"] = combine_splitted_tags(cstag_trimmed)
         idx += 1
 
     return alignments
 
 
-def remove_microhomology(alignments: Iterator[dict[str, str | int]]) -> Iterator[dict[str, str | int]]:
+def remove_microhomology(
+    alignments: Iterator[dict[str, str | int]],
+) -> Iterator[dict[str, str | int]]:
     alignments = list(alignments)
     alignments.sort(key=lambda x: (x["QNAME"], x["POS"]))
 
