@@ -100,7 +100,8 @@ def _get_length_of_microhomology(curr_sequence: str, next_sequence: str) -> int:
 ###########################################################
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-# `_split_csv_tag_by_insertion` and `_combine` are copied from combiner.py to avoid circular import
+# `_split_csv_tag_by_insertion` and `_combine` are
+# copied from combiner.py to avoid circular import
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 
