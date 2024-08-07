@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Iterator
 
+from csvtag.microhomology_handler import trim_microhomology
 from csvtag.splitter import split_by_tag
 from csvtag.to_sequence import to_sequence
 
@@ -64,11 +65,20 @@ def combine_splitted_tags(splitted_csv_tag: Iterator[str]) -> str:
 ###########################################################
 
 
+def _get_n_lengths(csv_tags: list[str], positions: list[int]) -> list[int]:
+    n_lengths = []
+    for curr_tag, _, curr_pos, next_pos in zip(csv_tags, csv_tags[1:], positions, positions[1:]):
+        n_length = next_pos - curr_pos - len(to_sequence(curr_tag))
+        n_lengths.append(n_length)
+    n_lengths.append(-1)
+    return n_lengths
+
+
 def _group_tags_by_distance(csv_tags: list[str], n_lengths: list[int], distance: int) -> list[list[str]]:
     groups = []
     current_group = [csv_tags[0]]
 
-    for i in range(len(n_lengths)):
+    for i in range(len(n_lengths) - 1):
         if n_lengths[i] <= distance:
             current_group.append(csv_tags[i + 1])
         else:
@@ -81,16 +91,38 @@ def _group_tags_by_distance(csv_tags: list[str], n_lengths: list[int], distance:
 
 def _padding_n(csv_tag: str, n_length: int, side: str = "left") -> str:
     csv_tag_split = list(split_by_tag(csv_tag))
+    is_inversion = csv_tag_split[0].islower()
+    n_character = "n" if is_inversion else "N"
+
     if side == "left":
         if csv_tag_split[0].startswith("="):
-            return "=" + ("N" * n_length) + csv_tag.lstrip("=")
+            return "=" + (n_character * n_length) + csv_tag.lstrip("=")
         else:
-            return "=" + ("N" * n_length) + csv_tag
+            return "=" + (n_character * n_length) + csv_tag
     else:
         if csv_tag_split[-1].startswith("="):
-            return csv_tag + ("N" * n_length)
+            return csv_tag + (n_character * n_length)
         else:
-            return csv_tag + "=" + ("N" * n_length)
+            return csv_tag + "=" + (n_character * n_length)
+
+
+def _combine_group(csv_tags: list[str], n_lengths: list[int], distance: int) -> list[str]:
+    idx = 0
+    tags_n_appended = []
+    for group_csvtags in _group_tags_by_distance(csv_tags, n_lengths, distance):
+        trimmed_csvtags = trim_microhomology(group_csvtags)
+        n_length = n_lengths[idx : idx + len(trimmed_csvtags) - 1] + [-1]
+        n_appended = []
+        for tag, n in zip(trimmed_csvtags, n_length):
+            if n != -1:
+                n_appended.append(_padding_n(tag, n, side="right"))
+            else:
+                n_appended.append(tag)
+        tags_n_appended.append(("".join(n_appended)))
+
+        idx += len(trimmed_csvtags)
+
+    return tags_n_appended
 
 
 def combine_neighboring_csv_tags(csv_tags: list[str], positions: list[int], distance: int = 50) -> Iterator[str]:
@@ -109,31 +141,6 @@ def combine_neighboring_csv_tags(csv_tags: list[str], positions: list[int], dist
     if not csv_tags or not positions or len(csv_tags) != len(positions):
         raise ValueError("csv_tags and positions must be non-empty and of the same length.")
 
-    # visited = set()
-    i = 0
-    combined_csv_tags = []
-    while i + 1 < len(csv_tags):
-        curr_csv_tag = csv_tags[i]
-        next_csv_tag = csv_tags[i + 1]
-        curr_pos = positions[i]
-        next_pos = positions[i + 1]
+    n_lengths = _get_n_lengths(csv_tags, positions)
 
-        n_length = next_pos - curr_pos - len(to_sequence(curr_csv_tag))
-
-        if 0 < n_length < distance:
-            combined_csv_tags.append(_padding_n(curr_csv_tag, n_length, side="right"))
-            # visited.add(i)
-            # visited.add(i + 1)
-        else:
-            if combined_csv_tags:
-                yield "".join(combined_csv_tags)
-                combined_csv_tags = []
-            # if i not in visited:
-            # yield curr_csv_tag
-        i += 1
-
-    # if i + 1 not in visited:
-    if combined_csv_tags:
-        yield "".join(combined_csv_tags)
-    for next_csv_tag in csv_tags[i:]:
-        yield next_csv_tag
+    return _combine_group(csv_tags, n_lengths, distance)

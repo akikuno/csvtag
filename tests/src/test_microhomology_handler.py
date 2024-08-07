@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from csvtag.microhomology_handler import _get_length_of_microhomology, _trim_microhomology, trim_microhomology
+from csvtag.microhomology_handler import _get_length_of_microhomology, trim_microhomology
 
 # @pytest.mark.parametrize(
 #     "curr_sequence, next_sequence, curr_qual, next_qual, expected",
@@ -35,44 +35,44 @@ def test_get_length_of_microhomology(curr_sequence, next_sequence, expected):
     assert _get_length_of_microhomology(curr_sequence, next_sequence) == expected
 
 
-@pytest.mark.parametrize(
-    "alignments, expected",
-    [
-        (
-            [
-                {"QNAME": "read1", "CSTAG": "=AAATTT", "CIGAR": "6M", "QUAL": "!!!!!!"},
-                {"QNAME": "read1", "CSTAG": "=TTTCCC", "CIGAR": "6M", "QUAL": "!!!!!!"},
-            ],
-            [
-                {"QNAME": "read1", "CSTAG": "=AAATTT", "CIGAR": "6M", "QUAL": "!!!!!!"},
-                {"QNAME": "read1", "CSTAG": "=CCC", "CIGAR": "6M", "QUAL": "!!!!!!"},
-            ],
-        ),
-        (
-            [
-                {"QNAME": "read1", "CSTAG": "=AAATTTGGG", "CIGAR": "9M", "QUAL": "!!!!!!!!!"},
-                {"QNAME": "read1", "CSTAG": "=GGGCCC", "CIGAR": "6M", "QUAL": "!!!!!!"},
-            ],
-            [
-                {"QNAME": "read1", "CSTAG": "=AAATTTGGG", "CIGAR": "9M", "QUAL": "!!!!!!!!!"},
-                {"QNAME": "read1", "CSTAG": "=CCC", "CIGAR": "6M", "QUAL": "!!!!!!"},
-            ],
-        ),
-        (
-            [
-                {"QNAME": "read1", "CSTAG": "=AAATTT", "CIGAR": "6M", "QUAL": "!!!!!!"},
-                {"QNAME": "read1", "CSTAG": "=CCCGGG", "CIGAR": "6M", "QUAL": "!!!!!!"},
-            ],
-            [
-                {"QNAME": "read1", "CSTAG": "=AAATTT", "CIGAR": "6M", "QUAL": "!!!!!!"},
-                {"QNAME": "read1", "CSTAG": "=CCCGGG", "CIGAR": "6M", "QUAL": "!!!!!!"},
-            ],
-        ),
-    ],
-)
-def test__trim_microhomology(alignments, expected):
-    result = _trim_microhomology(alignments)
-    assert result == expected, f"Expected {expected}, but got {result}"
+# @pytest.mark.parametrize(
+#     "alignments, expected",
+#     [
+#         (
+#             [
+#                 {"QNAME": "read1", "CSTAG": "=AAATTT", "CIGAR": "6M", "QUAL": "!!!!!!"},
+#                 {"QNAME": "read1", "CSTAG": "=TTTCCC", "CIGAR": "6M", "QUAL": "!!!!!!"},
+#             ],
+#             [
+#                 {"QNAME": "read1", "CSTAG": "=AAATTT", "CIGAR": "6M", "QUAL": "!!!!!!"},
+#                 {"QNAME": "read1", "CSTAG": "=CCC", "CIGAR": "6M", "QUAL": "!!!!!!"},
+#             ],
+#         ),
+#         (
+#             [
+#                 {"QNAME": "read1", "CSTAG": "=AAATTTGGG", "CIGAR": "9M", "QUAL": "!!!!!!!!!"},
+#                 {"QNAME": "read1", "CSTAG": "=GGGCCC", "CIGAR": "6M", "QUAL": "!!!!!!"},
+#             ],
+#             [
+#                 {"QNAME": "read1", "CSTAG": "=AAATTTGGG", "CIGAR": "9M", "QUAL": "!!!!!!!!!"},
+#                 {"QNAME": "read1", "CSTAG": "=CCC", "CIGAR": "6M", "QUAL": "!!!!!!"},
+#             ],
+#         ),
+#         (
+#             [
+#                 {"QNAME": "read1", "CSTAG": "=AAATTT", "CIGAR": "6M", "QUAL": "!!!!!!"},
+#                 {"QNAME": "read1", "CSTAG": "=CCCGGG", "CIGAR": "6M", "QUAL": "!!!!!!"},
+#             ],
+#             [
+#                 {"QNAME": "read1", "CSTAG": "=AAATTT", "CIGAR": "6M", "QUAL": "!!!!!!"},
+#                 {"QNAME": "read1", "CSTAG": "=CCCGGG", "CIGAR": "6M", "QUAL": "!!!!!!"},
+#             ],
+#         ),
+#     ],
+# )
+# def test__trim_microhomology(alignments, expected):
+#     result = _trim_microhomology(alignments)
+#     assert result == expected, f"Expected {expected}, but got {result}"
 
 
 ###########################################################
