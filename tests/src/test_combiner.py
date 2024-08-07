@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 import pytest
-
 from csvtag.combiner import (
     _get_n_lengths,
     _group_tags_by_distance,
     _padding_n,
+    _remove_contiguous_equals,
     combine_neighboring_csv_tags,
     combine_splitted_tags,
 )
@@ -74,10 +74,26 @@ def test_padding_n(csv_tag, n_length, side, expected):
 
 
 @pytest.mark.parametrize(
+    "input_data, expected",
+    [
+        (["=ANNN", "=BBBB"], ["=ANNN", "BBBB"]),
+        (["=aaaa", "=bbbb"], ["=aaaa", "bbbb"]),
+        (["=AAAA", "=aaaa"], ["=AAAA", "=aaaa"]),
+        (["=aaaa", "=AAAA"], ["=aaaa", "=AAAA"]),
+    ],
+)
+def test_remove_contiguous_equals(input_data, expected):
+    result = _remove_contiguous_equals(input_data)
+    assert result == expected, f"Expected {expected}, but got {result}"
+
+
+@pytest.mark.parametrize(
     "csv_tags, positions, distance, expected",
     [
         (["=AA", "=tt", "=CC"], [1, 5, 10], 50, ["=AANN=ttnnn=CC"]),
         (["=AA", "=tt", "=CC"], [1, 5, 100], 50, ["=AANN=tt", "=CC"]),
+        (["=A", "=C"], [1, 5], 50, [f'=A{"N"*3}C']),
+        (["=A", "=C"], [1, 102], 1000, [f'=A{"N"*100}C']),
         (["=GGGGTTAGCA", "=gcacttctgc", "=TGCATTTCAC"], [1, 8, 15], 50, ["=GGGGTTAGCA=cttctgc=ATTTCAC"]),
         (
             [

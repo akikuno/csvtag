@@ -106,6 +106,15 @@ def _padding_n(csv_tag: str, n_length: int, side: str = "left") -> str:
             return csv_tag + "=" + (n_character * n_length)
 
 
+def _remove_contiguous_equals(n_appended: list[str]) -> list[str]:
+    """Remove contengious "=" of second tag ("=ANNN=A" -> "=ANNNA")"""
+    for i, (curr_tag, next_tag) in enumerate(zip(n_appended, n_appended[1:])):
+        if curr_tag.startswith("=") and next_tag.startswith("="):
+            if (curr_tag.islower() and next_tag.islower()) or (curr_tag.isupper() and next_tag.isupper()):
+                n_appended[i + 1] = next_tag.lstrip("=")
+    return n_appended
+
+
 def _combine_group(csv_tags: list[str], n_lengths: list[int], distance: int) -> list[str]:
     idx = 0
     tags_n_appended = []
@@ -118,6 +127,9 @@ def _combine_group(csv_tags: list[str], n_lengths: list[int], distance: int) -> 
                 n_appended.append(_padding_n(tag, n, side="right"))
             else:
                 n_appended.append(tag)
+
+        n_appended = _remove_contiguous_equals(n_appended)
+
         tags_n_appended.append(("".join(n_appended)))
 
         idx += len(trimmed_csvtags)
