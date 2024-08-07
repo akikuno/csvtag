@@ -131,4 +131,3 @@ def split_by_nucleotide(csv_tag: str) -> Iterator[str]:
         else:
             csv_tags += handle_match_deletion(csv_tag, operand)
     yield from csv_tags
-

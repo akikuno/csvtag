@@ -125,7 +125,7 @@ def _combine_group(csv_tags: list[str], n_lengths: list[int], distance: int) -> 
     return tags_n_appended
 
 
-def combine_neighboring_csv_tags(csv_tags: list[str], positions: list[int], distance: int = 50) -> Iterator[str]:
+def combine_neighboring_csv_tags(csv_tags: list[str], positions: list[int], distance: int = 50) -> list[str]:
     """
     Examples:
         >>> csv_tags = ["=AA", "=tt", "=CC"]
