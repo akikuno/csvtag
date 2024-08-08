@@ -1,41 +1,31 @@
 from __future__ import annotations
 
-from csvtag.revcomp import revcomp
-from csvtag.splitter import split_by_inversion, split_by_tag
+from csvtag.splitter import split_by_tag
 
 
 def to_sequence(csv_tag: str) -> str:
-    """Reconstruct the reference subsequence in the alignment
+    """Reconstruct the **query** subsequence in the alignment
 
     Args:
-        csv_tag (str): csv tag in the **long** format
+        csv_tag (str): csv tag
 
     Returns:
-        str: The sequence string derived from the cs tag.
+        str: The sequence string derived from the csv tag.
 
     Example:
         >>> import csvtag
-        >>> csv_tag = "=AA=aa*ga=a=AA"
+        >>> csv_tag = "=AA=aa*ga=A-CC+G|G|G|=AAA"
         >>> csvtag.to_sequence(csv_tag)
-        'AAttttAA'
+        'AAaaaAGGGAAAA'
     """
     sequence = []
 
-    csv_tag_inversion = []
-    for csv in split_by_inversion(csv_tag):
-        nucleotide = csv[-1]
-        if nucleotide.islower():
-            csv_tag_inversion.append(revcomp(csv))
-        else:
-            csv_tag_inversion.append(csv)
-    csv_tag_inversion_corrected: str = "".join(csv_tag_inversion)
-
-    for cs in split_by_tag(csv_tag_inversion_corrected):
-        if cs.startswith("="):
-            sequence.append(cs[1:])
-        elif cs.startswith("+"):
-            sequence.append(cs[1:])
-        elif cs.startswith("*"):
-            sequence.append(cs[-1])
+    for tag in split_by_tag(csv_tag):
+        if tag.startswith("="):
+            sequence.append(tag[1:])
+        elif tag.startswith("+"):
+            sequence.append(tag[1:])
+        elif tag.startswith("*"):
+            sequence.append(tag[-1])
 
     return "".join(sequence)
