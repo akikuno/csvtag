@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-from csvtag.caller import _is_second_strand_different, _is_within_bases, call_csvtag
+from csvtag.caller import _is_second_strand_different, _is_within_bases, call
 
 
 @pytest.mark.parametrize(
@@ -33,16 +33,16 @@ def test_is_within_bases(first_end, second_pos, second_end, third_pos, expected)
     assert _is_within_bases(first_end, second_pos, second_end, third_pos, base_num=10) == expected
 
 
-def test_call_csvtag_one_alignment():
+def test_call_one_alignment():
     path_sam = Path("tests/data/one_alignment.sam")
-    result = list(call_csvtag(path_sam))
+    result = list(call(path_sam))
     expected = [{"QNAME": "read1", "CSVTAG": "=AAAAA", "POS": 1, "RNAME": "ref"}]
     assert result == expected, f"Expected {expected}, but got {result}"
 
 
-def test_call_csvtag_two_alignments():
+def test_call_two_alignments():
     path_sam = Path("tests/data/two_alignments.sam")
-    result = list(call_csvtag(path_sam))
+    result = list(call(path_sam))
     expected = [
         {"QNAME": "read1", "CSVTAG": "=AAAAA", "POS": 1, "RNAME": "ref"},
         {"QNAME": "read1", "CSVTAG": "=AA*AG=AA", "POS": 100, "RNAME": "ref"},
@@ -50,9 +50,9 @@ def test_call_csvtag_two_alignments():
     assert result == expected, f"Expected {expected}, but got {result}"
 
 
-def test_call_csvtag_three_alignments_with_inv():
+def test_call_three_alignments_with_inv():
     path_sam = Path("tests/data/three_alignments_witn_inv.sam")
-    result = list(call_csvtag(path_sam))
+    result = list(call(path_sam))
     expected = [
         {"QNAME": "read1", "RNAME": "ref", "POS": 1, "CSVTAG": "=AAAAA"},
         {"QNAME": "read1", "RNAME": "ref", "POS": 11, "CSVTAG": "=aa*ag=aa"},
@@ -61,9 +61,9 @@ def test_call_csvtag_three_alignments_with_inv():
     assert result == expected, f"Expected {expected}, but got {result}"
 
 
-def test_call_csvtag_four_alignments():
+def test_call_four_alignments():
     path_sam = Path("tests/data/four_alignments.sam")
-    result = list(call_csvtag(path_sam))
+    result = list(call(path_sam))
     result.sort(key=lambda x: [x["QNAME"], x["RNAME"], x["POS"]])
     expected = [
         {"QNAME": "read1", "RNAME": "ref", "POS": 1, "CSVTAG": "=AAAAA"},
@@ -79,9 +79,9 @@ def test_call_csvtag_four_alignments():
     assert result == expected, f"Expected {expected}, but got {result}"
 
 
-def test_call_csvtag_inversion_sr_simulated():
+def test_call_inversion_sr_simulated():
     path_sam = Path("tests/data/inversion_sr_simulated.sam")
-    result = list(call_csvtag(path_sam))
+    result = list(call(path_sam))
     expected = [
         {
             "CSVTAG": "=GGGGTATGTGGCTGCGTGGTCAAATGTGCGGCATACGTATTTGCTCGGCGTGCTTGCTCTCACGAACTTGACCTGGAGATCAAGGAGATGTTTCTTGTCCAACTGGACAGCGCTTCAACGGAATGGATCTACGTTACAGCCTGCATAAAGAAAACGGAGTTGCCGAGGACGAAAGCGACTTTAGGTTCTGTCCGTTGTCTTTGGCGGAAAACTTCCACTCAGGAAGCAGACACTGATTGACACGGTTTAGCA",

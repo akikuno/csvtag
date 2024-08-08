@@ -128,7 +128,7 @@ def _upper_cstag(alignments: list[dict[str, str | int]]) -> list[dict[str, str |
     return alignments
 
 
-def call_csvtag(path_sam: str | Path) -> Iterator[dict[str, str | int]]:
+def call(path_sam: str | Path) -> Iterator[dict[str, str | int]]:
     """
     Process SAM file and yield alignment information with CSV tags.
 
@@ -144,7 +144,7 @@ def call_csvtag(path_sam: str | Path) -> Iterator[dict[str, str | int]]:
             - "QNAME" (str): Query name (read name).
             - "RNAME" (str): Reference sequence name.
             - "POS" (int): 1-based leftmost mapping position.
-            - "CSVTAG" (str): Processed CSV tag in uppercase.
+            - "CSVTAG" (str): Processed csv tag.
 
     Example:
         >>> for alignment in call_csvtag("example.sam"):
