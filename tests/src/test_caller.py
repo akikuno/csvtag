@@ -3,7 +3,6 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-
 from csvtag.caller import _is_second_strand_different, _is_within_bases, call_csvtag
 
 
@@ -32,7 +31,6 @@ def test_is_second_strand_different(first_flag, second_flag, third_flag, expecte
 )
 def test_is_within_bases(first_end, second_pos, second_end, third_pos, expected):
     assert _is_within_bases(first_end, second_pos, second_end, third_pos, base_num=10) == expected
-
 
 
 def test_call_csvtag_one_alignment():

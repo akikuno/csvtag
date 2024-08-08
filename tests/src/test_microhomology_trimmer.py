@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from csvtag.microhomology_handler import _get_length_of_microhomology, trim_microhomology
+from csvtag.microhomology_trimmer import _get_length_of_microhomology, trim_microhomology
 
 # @pytest.mark.parametrize(
 #     "curr_sequence, next_sequence, curr_qual, next_qual, expected",

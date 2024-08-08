@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Iterator
 
-from csvtag.microhomology_handler import trim_microhomology
+from csvtag.microhomology_trimmer import trim_microhomology
 from csvtag.splitter import split_by_tag
 from csvtag.to_sequence import to_sequence
 

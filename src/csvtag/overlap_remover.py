@@ -39,37 +39,8 @@ def _is_complete_overlapped(alignments_overlapped: OverlappedAlignment) -> bool:
     return False
 
 
-# def _is_non_microhomologic_overlapped(alignments_overlapped: OverlappedAlignment) -> bool:
-#     curr_pos = alignments_overlapped.curr_pos
-#     next_pos = alignments_overlapped.next_pos
-#     curr_cigar = alignments_overlapped.curr_cigar
-#     next_cigar = alignments_overlapped.next_cigar
-#     curr_cstag = alignments_overlapped.curr_cstag
-#     next_cstag = alignments_overlapped.next_cstag
-
-#     curr_seq = cstag.to_sequence(curr_cstag)
-#     next_seq = cstag.to_sequence(next_cstag)
-
-#     curr_start = curr_pos - 1
-#     curr_end = curr_start + calculate_alignment_length(curr_cigar)
-#     next_start = next_pos - 1
-#     next_end = next_start + calculate_alignment_length(next_cigar)
-
-#     overlap_length = min(curr_end, next_end) - max(curr_start, next_start)
-
-#     if overlap_length <= 0:
-#         return False
-
-#     if curr_seq[-overlap_length:] == next_seq[:overlap_length]:
-#         return False
-#     else:
-#         True
-
-
 def _is_overlapped(alignments_overlapped: OverlappedAlignment) -> bool:
-    return _is_complete_overlapped(
-        alignments_overlapped
-    )  # or _is_non_microhomologic_overlapped(alignments_overlapped)
+    return _is_complete_overlapped(alignments_overlapped)
 
 
 def _remove_duplicates(

@@ -3,10 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 import pytest
-
-from csvtag.overlap_handler import (
+from csvtag.overlap_remover import (
     _is_complete_overlapped,
-    # _is_non_microhomologic_overlapped,
     remove_overlapped_alignments,
 )
 
@@ -40,56 +38,6 @@ class OverlappedAlignment:
 def test_is_complete_overlapped(alignments_overlapped, expected):
     result = _is_complete_overlapped(alignments_overlapped)
     assert result == expected, f"Expected {expected}, but got {result}"
-
-
-# @pytest.mark.parametrize(
-#     "alignments_overlapped, expected",
-#     [
-#         pytest.param(
-#             OverlappedAlignment(
-#                 curr_cstag="=GACT", next_cstag="=ACT", curr_cigar="4M", next_cigar="3M", curr_pos=1, next_pos=1
-#             ),
-#             True,
-#             id="test_case_1",
-#         ),
-#         pytest.param(
-#             OverlappedAlignment(
-#                 curr_cstag="=ACTG", next_cstag="=ACT", curr_cigar="4M", next_cigar="3M", curr_pos=1, next_pos=6
-#             ),
-#             False,
-#             id="test_case_2",
-#         ),
-#         pytest.param(
-#             OverlappedAlignment(
-#                 curr_cstag="=ACTG", next_cstag="=ACT", curr_cigar="4M", next_cigar="3M", curr_pos=1, next_pos=7
-#             ),
-#             False,
-#             id="test_case_3",
-#         ),
-#         pytest.param(
-#             OverlappedAlignment(
-#                 curr_cstag="=ACTG", next_cstag="=ACTG", curr_cigar="4M", next_cigar="4M", curr_pos=1, next_pos=1
-#             ),
-#             True,
-#             id="test_case_5",
-#         ),
-#         pytest.param(
-#             OverlappedAlignment(
-#                 curr_cstag="=ACTGACTGACTG",
-#                 next_cstag="=ACTGACTGACTG",
-#                 curr_cigar="12M",
-#                 next_cigar="12M",
-#                 curr_pos=1,
-#                 next_pos=11,
-#             ),
-#             False,
-#             id="test_case_6",
-#         ),
-#     ],
-# )
-# def test_is_non_microhomologic_overlapped(alignments_overlapped, expected):
-#     result = _is_non_microhomologic_overlapped(alignments_overlapped)
-#     assert result == expected, f"Expected {expected}, but got {result}"
 
 
 @pytest.mark.parametrize(

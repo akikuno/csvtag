@@ -6,7 +6,7 @@ from pathlib import Path
 
 import cstag
 
-from csvtag.overlap_handler import remove_overlapped_alignments
+from csvtag.overlap_remover import remove_overlapped_alignments
 from csvtag.sam_handler import (
     calculate_alignment_length,
     extract_alignment,
@@ -72,16 +72,8 @@ def convert_to_csvtag(
 
         first_cstag: str = first_align["CSTAG"]
         second_cstag: str = second_align["CSTAG"]
-        # third_cstag: str = third_align["CSTAG"]
 
         if is_second_strand_different and is_within_bases:
-            #     if second_pos - first_end > 0:
-            #         first_cstag = _padding_n(first_cstag, second_pos - first_end, side="right")
-            #     if third_pos - second_end > 0:
-            #         third_cstag = _padding_n(third_cstag, third_pos - second_end, side="left")
-
-            # csv_tag = first_cstag + second_cstag.lower() + third_cstag
-
             yield {
                 "QNAME": first_align["QNAME"],
                 "RNAME": first_align["RNAME"],
@@ -138,7 +130,28 @@ def _upper_cstag(alignments: list[dict[str, str | int]]) -> list[dict[str, str |
 
 def call_csvtag(path_sam: str | Path) -> Iterator[dict[str, str | int]]:
     """
-    output: [{"QNAME": "read1", "CSVTAG": "=AAAAA"], {"QNAME": "read1", "CSVTAG": "=TTTTT"}, ...]}
+    Process SAM file and yield alignment information with CSV tags.
+
+    This function reads a SAM file, extracts alignments, removes overlapped alignments,
+    sorts them, and processes the alignment tags. The result is an iterator of dictionaries,
+    each containing the query name, reference name, position, and processed CSV tag.
+
+    Args:
+        path_sam (str | Path): The path to the SAM file to be processed.
+
+    Yields:
+        Iterator[dict[str, str | int]]: An iterator of dictionaries with the following keys:
+            - "QNAME" (str): Query name (read name).
+            - "RNAME" (str): Reference sequence name.
+            - "POS" (int): 1-based leftmost mapping position.
+            - "CSVTAG" (str): Processed CSV tag in uppercase.
+
+    Example:
+        >>> for alignment in call_csvtag("example.sam"):
+        ...     print(alignment)
+        {"QNAME": "read1", "RNAME": "chr1", "POS": 100, "CSVTAG": "=AAAAA"}
+        {"QNAME": "read1", "RNAME": "chr1", "POS": 150, "CSVTAG": "=TTTTT"}
+        ...
     """
     alignments: Iterator[dict[str, str | int]] = extract_alignment(read_sam(path_sam))
     alignments = remove_overlapped_alignments(alignments)
