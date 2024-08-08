@@ -9,7 +9,7 @@ def _get_length_of_microhomology(curr_sequence: str, next_sequence: str) -> int:
     min_length = min(len(curr_sequence), len(next_sequence))
 
     for i in range(1, min_length + 1):
-        if curr_sequence[-i:] == next_sequence[:i]:  # and curr_qual[-i:] == next_qual[:i]:
+        if curr_sequence[-i:] == next_sequence[:i]:
             len_microhomology = i
     return len_microhomology
 
