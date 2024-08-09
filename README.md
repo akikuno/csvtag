@@ -40,7 +40,7 @@ This is essentially the same encoding as the [minimap2 cs tag](https://lh3.githu
 # Functions
 
 - `csvtag.call()`: Generate a csv tag
-- `csvtag.to_sequence()`: Reconstruct a reference subsequence from the alignment
+- `csvtag.to_sequence()`: Reconstruct a query subsequence from the alignment
 <!-- - `csvtag.to_vcf()`: Generate an VCF representation -->
 <!-- - `csvtag.to_html()`: Generate an HTML representation -->
 
