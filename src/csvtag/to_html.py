@@ -6,55 +6,55 @@ from csvtag.splitter import split_by_tag
 from csvtag.template.html import HTML_FOOTER, HTML_HEADER, HTML_LEGEND
 
 
-def append_mark_to_n(csv_tag: str) -> str:
-    """Process each csv tag by adding specific markers `@` to `N`."""
+def _append_mark_to_n(csv_tag: str) -> str:
+    """Process each csv tag by adding specific markers `@` to `N` or `n`."""
 
-    def append_mark(cs: str) -> str:
-        if cs.startswith("N"):
-            return "@" + cs
-        elif re.match(r"^[ACGT]", cs):
-            return "=" + cs
-        return cs
+    def _append_mark(tag: str) -> str:
+        if tag.startswith("N") or tag.startswith("n"):
+            return "@" + tag
+        elif re.match(r"^[ACGTacgt]", tag):
+            return "=" + tag
+        return tag
 
-    csv_tag = csv_tag.replace("=N", "N")
-    csv_tag_processed = [append_mark(cs) for cs in re.split(r"(N+)", csv_tag) if cs and cs != "="]
+    csv_tag = csv_tag.replace("=N", "N").replace("=n", "n")
+    csv_tag_processed = [_append_mark(tag) for tag in re.split(r"(N+|n+)", csv_tag) if tag and tag != "="]
 
     return "".join(csv_tag_processed)
 
 
-def apply_css(cs: str, css_class: str) -> str:
+def _apply_css(cs: str, css_class: str) -> str:
     return f"<span class='{css_class}'>{cs.upper()}</span>"
 
 
-def process_csv_tag(csv_tag: str) -> str:
+def _make_html_body(csv_tag: str) -> str:
     # Format csv_tag
-    csv_tag = csv_tag.replace("cs:Z:", "")
-    csv_tag_marked = append_mark_to_n(csv_tag)
-    csv_tag_split = split_by_tag(csv_tag_marked)
+    csv_tag_marked = _append_mark_to_n(csv_tag)
+    csv_tag_split = list(split_by_tag(csv_tag_marked))
 
     # Build html
     html_body = []
     idx = 0
     while idx < len(csv_tag_split):
-        cs = csv_tag_split[idx]
-        if cs.startswith("="):
-            html_body.append(cs[1:])
-        elif cs.startswith("@"):
-            html_body.append(apply_css(cs[1:], "Unknown"))
-        elif cs.startswith("*"):
-            substitutions = [cs[2]]
+        tag = csv_tag_split[idx]
+        operand, nucleotides = tag[0], tag[1:]
+        if operand.startswith("="):
+            html_body.append(nucleotides)
+        elif operand.startswith("@"):
+            html_body.append(_apply_css(nucleotides, "Unknown"))
+        elif operand.startswith("*"):
+            substitutions = [nucleotides[1]]
             while idx < len(csv_tag_split) - 1 and csv_tag_split[idx + 1].startswith("*"):
                 substitutions.append(csv_tag_split[idx + 1][2])
                 idx += 1
-            html_body.append(apply_css("".join(substitutions), "Sub"))
-        elif cs.startswith("+"):
-            html_body.append(apply_css(cs[1:], "Ins"))
-        elif cs.startswith("-"):
-            html_body.append(apply_css(cs[1:], "Del"))
-        elif cs.startswith("~"):
-            left, right = cs[1:3], cs[-2:]
-            splice = "-" * (int(cs[3:-2]) - 4)
-            html_body.append(apply_css(f"{left}{splice}{right}", "Splice"))
+            html_body.append(_apply_css("".join(substitutions), "Sub"))
+        elif operand.startswith("+"):
+            html_body.append(_apply_css(nucleotides, "Ins"))
+        elif operand.startswith("-"):
+            html_body.append(_apply_css(nucleotides, "Del"))
+        elif operand.startswith("~"):
+            left, right = tag[1:3], tag[-2:]
+            splice = "-" * (int(tag[3:-2]) - 4)
+            html_body.append(_apply_css(f"{left}{splice}{right}", "Splice"))
         idx += 1
 
     return f"<p class='p_seq'>{''.join(html_body)}</p>"
@@ -75,7 +75,7 @@ def to_html(csv_tag: str, description: str = "") -> str:
     """
 
     description_str = f"<h1>{description}</h1>" if description else ""
-    html_body = process_csv_tag(csv_tag)
+    html_body = _make_html_body(csv_tag)
     report = "\n".join(
         [
             HTML_HEADER,
