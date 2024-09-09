@@ -1,6 +1,8 @@
 [![Licence](https://img.shields.io/badge/License-MIT-9cf.svg?style=flat-square)](https://choosealicense.com/licenses/mit/)
 [![Test](https://img.shields.io/github/actions/workflow/status/akikuno/csvtag/pytest.yml?branch=main&label=Test&color=brightgreen)](https://github.com/akikuno/csvtag/actions)
 
+> [!CAUTION]
+> This package is currently under development. Please use [`midsv`](https://github.com/akikuno/midsv) until it is complete.
 
 # csvtag
 
